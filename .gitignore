@@ -1,3 +1,4 @@
 .ipynb_checkpoints/
 __pycache__/
 df_assay_entries.csv
+data/
