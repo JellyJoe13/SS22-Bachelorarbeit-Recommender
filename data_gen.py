@@ -11,7 +11,9 @@ import torch
 from torch_geometric.data import Data
 import rdkit
 from rdkit.Chem import Descriptors, MolFromSmiles
-from tqdm.auto import tqdm
+import os
+from os.path import exists
+
 
 def pandas_to_GNN_pyg_edges(df, cid_translation_dictionary:dict, aid_translation_dictionary:dict):
     # definition of function used for creating the edgeset for test/train & active/inactive
@@ -25,7 +27,7 @@ def pandas_to_GNN_pyg_edges(df, cid_translation_dictionary:dict, aid_translation
         # create marker for current position in array
         marker = 0
         # iterate over the rows and enter the edges in the array
-        for _, row in tqdm(df_s.iterrows()):
+        for _, row in df_s.iterrows():
              # find mapped cid
             mcid = cid_translation_dictionary[row.cid]
             # find mapped aid
@@ -47,6 +49,24 @@ def pandas_to_GNN_pyg_edges(df, cid_translation_dictionary:dict, aid_translation
     return pos_edge_index, neg_edge_index
 
 
+def pandas_to_GNN_pyg_edges_v2(df, cid_translation_dictionary:dict, aid_translation_dictionary:dict):
+    # faster function to convert the pandas dataframe to GNN pytorch data
+    # map ids to GNN id
+    df['id_1']=df['aid'].map(lambda x: aid_translation_dictionary[x])
+    df['id_2']=df['cid'].map(lambda x: cid_translation_dictionary[x])
+    ret = {}
+    for mode in ['active', 'inactive']:
+        df_n = df[df.activity==mode]
+        # extract edges information
+        edge_direction_1 = df_n[['id_1', 'id_2']].to_numpy()
+        edge_direction_2 = edge_direction_1.copy()
+        # swap columns so that the other direction is simulated
+        edge_direction_2[:, [0,1]]=edge_direction_2[:, [1,0]]
+        # fuse both direction arrays
+        ret[mode] = np.concatenate((edge_direction_1, edge_direction_2), axis=0)
+    return torch.tensor(np.transpose(ret['active']), dtype=torch.long), torch.tensor(np.transpose(ret['inactive']), dtype=torch.long)
+
+
 def smiles_and_rdkit_chem_param_generation(df, aid_count:int, cid_count:int, cid_translation_dictionary:dict, generate:bool=True, empty_GNN_x:int=0):
     #simple check if empty_GNN_x is properly used
     assert empty_GNN_x>=0
@@ -56,10 +76,14 @@ def smiles_and_rdkit_chem_param_generation(df, aid_count:int, cid_count:int, cid
     # SEPARATING BETWEEN MODES missing
     if generate:
         # Modus where rdkit is used to generate the descriptors. any empty_GNN_x is ignored (currently)
+        # Note: this is very time-consuming so that the pre-generated x is stored in a csv file in the data folder. if the file exists we load it from there
+        if exists("data/descriptors_x.csv"):
+            load_x = np.nan_to_num(np.loadtxt("data/descriptors_x.csv",delimiter = ","), nan=0)
+            return torch.tensor(load_x, dtype=torch.float)
         # create x array
         x = np.zeros(shape=((aid_count+cid_count), len(Descriptors.descList)))
         # iterate over filtered and sorted table
-        for _, row in tqdm(df[['cid', 'smiles']].sort_values(by=['cid']).drop_duplicates(subset=['cid']).iterrows()):
+        for _, row in df[['cid', 'smiles']].sort_values(by=['cid']).drop_duplicates(subset=['cid']).iterrows():
             # get corresponding id of cid
             mapped_id = cid_translation_dictionary[row.cid]
             # decode smiles notation to something the Descriptors can use using MolFrom Smiles
@@ -68,15 +92,15 @@ def smiles_and_rdkit_chem_param_generation(df, aid_count:int, cid_count:int, cid
             desc = np.array([func(mol) for _, func in Descriptors.descList])
             # put descriptors into the correct part of the x array
             x[mapped_id,:]=desc
-        return x
+        return torch.tensor(x, dtype=torch.float)
     else:
         # no descriptors will be computed
         if empty_GNN_x==0:
             # in this case the number of parameters shall be the same as the number of descriptors. All values are set to 0
-            return np.zeros(shape=((aid_count+cid_count), len(Descriptors.descList)))
+            return torch.tensor(np.zeros(shape=((aid_count+cid_count), len(Descriptors.descList))), dtype=torch.float)
         else:
             # this means a specific amount is set, it will generate this specific number of parameters for each node
-            return np.zeros(shape=((aid_count+cid_count), empty_GNN_x))
+            return torch.tensor(np.zeros(shape=((aid_count+cid_count), empty_GNN_x)), dtype=torch.float)
 
 
 def data_transform_split(data_mode:int, split_mode:int=0, path:str="df_assay_entries.csv", empty_GNN_x:int=0):
@@ -114,12 +138,10 @@ def data_transform_split(data_mode:int, split_mode:int=0, path:str="df_assay_ent
     # assert for empty_GNN_x
     assert empty_GNN_x>=0
     # import data
-    print("Load CSV")
     df = pd.read_csv(path)
     # define empty split variable for differing split types of groupwise and randomwise splitting
     split = None
     #separation of split methods
-    print("Split part")
     if split_mode==0:
         splitparam = df['cid'].to_numpy()
         split = ShuffleSplit(n_splits=1, random_state=0, test_size=0.2, train_size=None).split(splitparam, None)
@@ -138,7 +160,6 @@ def data_transform_split(data_mode:int, split_mode:int=0, path:str="df_assay_ent
     for i,j in split:
         train_ind = i
         test_ind = j
-    print("Begin data creation part")
     # now we have the indexes of the split data. Left to do is use this and create the data package of choice 
     if data_mode==0:
         #data mode of surprise package
@@ -147,9 +168,7 @@ def data_transform_split(data_mode:int, split_mode:int=0, path:str="df_assay_ent
         # define reader to convert pandas dataframe to surprise package
         reader = Reader(rating_scale=(0,1))
         # convert dataset importing only the entries from trainset index list using the iloc function
-        print("Build trainset")
         trainset = Dataset.load_from_df(df.iloc[train_ind][['aid', 'cid', 'rating']], reader).build_full_trainset()
-        print("Build testset")
         testset = Dataset.load_from_df(df.iloc[test_ind][['aid', 'cid', 'rating']], reader).build_full_trainset().build_testset()
         return trainset, testset
     else:
@@ -171,14 +190,11 @@ def data_transform_split(data_mode:int, split_mode:int=0, path:str="df_assay_ent
         # PROCESSING PART
         # the nodes in the graph are all the ids we have from aid and cid
         # the edges are the connections between aid and cid which are ACTIVE - these are stored in the pos edge_indeces, the inactive edges are stored in the neg edge indexes
-        print("Build trainset")
         # generate the edges of the trainset
-        train_pos_edge_index, train_neg_edge_index = pandas_to_GNN_pyg_edges(df.iloc[train_ind], cid_translation_dictionary, aid_translation_dictionary)
-        print("Build testset")
+        train_pos_edge_index, train_neg_edge_index = pandas_to_GNN_pyg_edges_v2(df.iloc[train_ind], cid_translation_dictionary, aid_translation_dictionary)
         # generate the edges of the testset
-        test_pos_edge_index, test_neg_edge_index = pandas_to_GNN_pyg_edges(df.iloc[test_ind], cid_translation_dictionary, aid_translation_dictionary)
+        test_pos_edge_index, test_neg_edge_index = pandas_to_GNN_pyg_edges_v2(df.iloc[test_ind], cid_translation_dictionary, aid_translation_dictionary)
         # call rdkit generating function with info if the x parameter should be empty or not
-        print("Starting SMILES conversion")
         x = smiles_and_rdkit_chem_param_generation(df, aid_count, cid_count, cid_translation_dictionary, generate=(data_mode==2), empty_GNN_x=empty_GNN_x)
         data = Data(x=x, train_pos_edge_index=train_pos_edge_index, train_neg_edge_index=train_neg_edge_index, test_pos_edge_index=test_pos_edge_index, test_neg_edge_index=test_neg_edge_index)
         # NEG EDGE INDEX CAN CONTAIN THE INACTIVE EDGES SO THAT THEY ARE DISPLAYED AS NOT ACTIVE; OMG
