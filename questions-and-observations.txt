@@ -1,0 +1,12 @@
+- werte werden irgendwann spaltenweise gleich wie es mir scheint
+- Klassifizierung von Werten mit einer Universellen Wahrscheinlichkeit an einem gewissen Punkt
+- roc curve immer schlechter, precision and recall werden besser (es gibt keine True negative Werte mehr)
+- epochenwahl aufgrund von ROC AUC?
+- bessere prediction/recall bereits erreicht
+- guter ROC AUC und pred/rec in Epoche ~5-10?
+
+Fragen:
+- Beobachten und analysieren und gute Konfig auswählen?
+- Welche Parameter am Ehesten austauschen/testen?
+- Verbesserungsvorschläge?
+- Literaturvorschläge?

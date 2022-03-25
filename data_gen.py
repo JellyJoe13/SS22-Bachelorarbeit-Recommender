@@ -198,4 +198,4 @@ def data_transform_split(data_mode:int, split_mode:int=0, path:str="df_assay_ent
         x = smiles_and_rdkit_chem_param_generation(df, aid_count, cid_count, cid_translation_dictionary, generate=(data_mode==2), empty_GNN_x=empty_GNN_x)
         data = Data(x=x, train_pos_edge_index=train_pos_edge_index, train_neg_edge_index=train_neg_edge_index, test_pos_edge_index=test_pos_edge_index, test_neg_edge_index=test_neg_edge_index)
         # NEG EDGE INDEX CAN CONTAIN THE INACTIVE EDGES SO THAT THEY ARE DISPLAYED AS NOT ACTIVE; OMG
-        return data
+        return data, aid_count
