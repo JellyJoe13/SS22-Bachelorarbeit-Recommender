@@ -1,4 +1,5 @@
 .ipynb_checkpoints/
 __pycache__/
+.idea/
 df_assay_entries.csv
 data/
