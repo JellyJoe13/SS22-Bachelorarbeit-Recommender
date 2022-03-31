@@ -6,7 +6,8 @@ import numpy as np
 def transform_and_scale_x_data(
         save_to_file: bool = False,
         path: str = "data/descriptors_x.csv",
-        saving_path: str = "data/descriptors_x_transformed2.csv"
+        saving_path: str = "data/descriptors_x_transformed2.csv",
+        already_loaded_array=None
 ) -> np.ndarray:
     """
     This function takes the original data from rdkit containing the chemical descriptors and transforms them.
@@ -19,13 +20,21 @@ def transform_and_scale_x_data(
         str : used for specifying the input chemical parameters to load
     saving_path
         str : used for specifying the file the data should be written to in case save_to_file is True
+    already_loaded_array
+        np.ndarray : if the dataset has already been loaded, use it instead of loading it from anew
 
     Returns
     -------
     numpy.ndarray containing the transformed and scaled data
     """
-    # load the numpy array from existing file
-    load_x = np.nan_to_num(np.loadtxt(path, delimiter=","), nan=0).astype('float64')
+    load_x = None
+    # determine if data needs to be loaded from file or has been provided in parameter
+    if already_loaded_array:
+        # set load_x to input array
+        load_x = already_loaded_array.copy()
+    else:
+        # load the numpy array from existing file
+        load_x = np.nan_to_num(np.loadtxt(path, delimiter=","), nan=0).astype('float64')
     # ZERO COLUMN SECTION
     # find the columns which only contain zeros and delete them
     index_cols = np.argwhere(np.all(load_x == 0, axis=0))
