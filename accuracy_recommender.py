@@ -79,14 +79,36 @@ def accuracy_precision_recall(
     tuple(int, int) : Returns a tuple containing the precision and recall of the top k entries.
     """
     # determine the k for the top k entries
-    k = int(link_labels.size(0)/100)
+    k = int(link_labels.size(0) / 100)
     # set threshold
     threshold = 0.5
-    df = pd.DataFrame(np.c_[np.transpose(edge_index.detach().numpy()),
+    # FASTER VERSION USING PANDAS FRAME
+    ids = np.min(edge_index.detach().numpy().T, axis=1)
+    # create pandas frame (used for grouping
+    df = pd.DataFrame(np.c_[ids,
                             link_labels.detach().numpy(),
                             link_logits.sigmoid().detach().numpy()],
-                      columns=['id1', 'id2', 'true_label', 'pred_label'])
-    df['id1'] = df['id1'].map(lambda x: x if x < id_breakpoint else 0)
-    df['id2'] = df['id1'].map(lambda x: x if x < id_breakpoint else 0)
-    df['id'] = df['id1'].to_numpy()+df['id2'].to_numpy()
-    df.drop(columns=['id1', 'id2'])
+                      columns=['id', 'true_label', 'pred_label'])
+    '''
+    The following code is inspired/partially copied from the surpriselib documentation and applied for 
+    pytorch-geometric. (URL: https://surprise.readthedocs.io/en/stable/FAQ.html#how-to-compute-precision-k-and-recall-k)
+    '''
+    # create dicts for the id wise precision and recall to be put into
+    precisions = {}
+    recalls = {}
+    # group by id(=user) and calculate the precision and recall for each id grouping
+    for df_id, content in df.groupby(by=['id']):
+        # sort the data according to prediction_label with large entries first
+        c = content.sort_values(by=['pred_label'], ascending=False)
+        # calculate total number of relations that are active
+        n_rel = (c.true_label >= threshold).sum()
+        # calculate total number of predictions (first k) that are estimated as active
+        n_rec_k = (c.pred_label[:k] >= threshold).sum()
+        # calculate true positive k entries
+        n_rel_and_rec_k = ((c.true_label[:k] >= threshold) & (c.pred_label[:k] >= threshold)).sum()
+        # calculate precision of the id and put it into dict
+        precisions[df_id] = n_rel_and_rec_k / n_rec_k if n_rec_k != 0 else 0
+        # calculate recall of the id and put it into dict
+        recalls[df_id] = n_rel_and_rec_k / n_rel if n_rel != 0 else 0
+    # calculate average precisions and recall and return them
+    return sum(p for p in precisions.values()) / len(precisions), sum(r for r in recalls.values()) / len(recalls)
