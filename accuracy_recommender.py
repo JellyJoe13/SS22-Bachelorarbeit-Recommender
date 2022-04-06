@@ -18,15 +18,15 @@ def calc_ROC_curve(
 
     Parameters
     ----------
-    save_as_file
-        bool : controls if the plot should be saved.
-    output_path
-        str : Determines the path and file name where the plot SVG should be put (only if save_as_file is set to True)
-    link_labels
-        torch.Tensor : Inputs the true label of the edge - either 0 (inactive) or 1 (active) for each edge to predict
-    link_logits
-        torch.Tensor : Input the estimation of the edge, which will  be subject to sigmoid interpretion to compute the
-        probability of the edge being present in the graph
+    save_as_file : bool
+        controls if the plot should be saved.
+    output_path : str
+        Determines the path and file name where the plot SVG should be put (only if save_as_file is set to True)
+    link_labels : torch.Tensor
+        Inputs the true label of the edge - either 0 (inactive) or 1 (active) for each edge to predict
+    link_logits : torch.Tensor
+        Input the estimation of the edge, which will  be subject to sigmoid interpretion to compute the probability of
+        the edge being present in the graph
 
     Returns
     -------
@@ -65,18 +65,19 @@ def accuracy_precision_recall(
 
     Parameters
     ----------
-    edge_index
-        torch.Tensor : tensor containing the link information which nodes were connected by the labels
-    link_labels
-        torch.Tensor : tensor containing the true labels of the edges
-    link_logits
-        torch.Tensor : tensor containing the predicted labels of the edges, probability will be calculated afterwards
-    id_breakpoint
-        int : Number indexing until which index of the GNN-id the original assay id and compound id belong
+    edge_index : torch.Tensor
+        tensor containing the link information which nodes were connected by the labels
+    link_labels : torch.Tensor
+        tensor containing the true labels of the edges
+    link_logits : torch.Tensor
+        tensor containing the predicted labels of the edges, probability will be calculated afterwards
+    id_breakpoint : int
+        Number indexing until which index of the GNN-id the original assay id and compound id belong
 
     Returns
     -------
-    tuple(int, int) : Returns a tuple containing the precision and recall of the top k entries.
+    tuple(int, int)
+        A tuple containing the precision and recall of the top k entries.
     """
     # determine the k for the top k entries
     k = int(link_labels.size(0) / 100)

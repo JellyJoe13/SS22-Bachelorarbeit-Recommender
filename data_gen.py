@@ -2,6 +2,7 @@
 This file is used to copy the developed functions of the Jupyter notebook file(-s) to use them in another notebook.
 The purpose of this file: import data and transform them to model data
 """
+import pandas
 import pandas as pd
 import surprise
 from surprise import Reader, Dataset, SVD
@@ -52,7 +53,7 @@ def pandas_to_GNN_pyg_edges(df, cid_translation_dictionary: dict, aid_translatio
 
 
 def pandas_to_GNN_pyg_edges_v2(
-        df,
+        df: pandas.DataFrame,
         cid_translation_dictionary: dict,
         aid_translation_dictionary: dict
 ):
@@ -61,16 +62,17 @@ def pandas_to_GNN_pyg_edges_v2(
 
     Parameters
     ----------
-    df
+    df : pandas.DataFrame
         pandas dataframe containing the data to transform
-    cid_translation_dictionary
-        dict : dictionary containing the mapping of cid's to new ids to use in the GNN
-    aid_translation_dictionary
-        dict : dictionary containing the mapping of aid's to new ids to use in the GNN
+    cid_translation_dictionary : dict
+        dictionary containing the mapping of cid's to new ids to use in the GNN
+    aid_translation_dictionary : dict
+        dictionary containing the mapping of aid's to new ids to use in the GNN
 
     Returns
     -------
-    torch.tensor : Tensor containing the transformed data - the edges of the GNN
+    torch.tensor
+        Tensor containing the transformed data - the edges of the GNN
     """
     # faster function to convert the pandas dataframe to GNN pytorch data
     # map ids to GNN id
@@ -91,7 +93,7 @@ def pandas_to_GNN_pyg_edges_v2(
 
 
 def smiles_and_rdkit_chem_param_generation(
-        df,
+        df: pandas.DataFrame,
         aid_count: int,
         cid_count: int,
         cid_translation_dictionary: dict,
@@ -103,22 +105,23 @@ def smiles_and_rdkit_chem_param_generation(
 
     Parameters
     ----------
-    df
+    df : pandas.DataFrame
         pandas dataframe : Input data which contains the SMILES data of the molecules to transform
-    aid_count
-        int : Integer telling the algorithm how many experiment ids there are; used for space allocation and indexing
-    cid_count
-        int : Integer telling the algorithm how many molecule ids there are; used for space allocation
-    cid_translation_dictionary
-        dict : Dictionary used for translating the compound ids to GNN ids
-    generate
-        bool : Truth value determining if or if not node data will be generated
-    empty_GNN_x
-        int : Integer specifying how many node features the ouput tensor should have if generate is set to False
+    aid_count : int
+        Integer telling the algorithm how many experiment ids there are; used for space allocation and indexing
+    cid_count : int
+        Integer telling the algorithm how many molecule ids there are; used for space allocation
+    cid_translation_dictionary : dict
+        Dictionary used for translating the compound ids to GNN ids
+    generate : bool
+        Truth value determining if or if not node data will be generated
+    empty_GNN_x : int
+        Integer specifying how many node features the ouput tensor should have if generate is set to False
 
     Returns
     -------
-    torch.tensor : Tensor containing the node data of the GNN
+    torch.tensor
+        Tensor containing the node data of the GNN
     """
     # simple check if empty_GNN_x is properly used
     assert empty_GNN_x >= 0
@@ -185,15 +188,15 @@ def data_transform_split(
 
     Parameters
     ----------
-    data_mode
-        int : defines if the desired output is a surprise data package (0) or the torch_geometric data
+    data_mode : int
+        defines if the desired output is a surprise data package (0) or the torch_geometric data
         (1 without rdkit information; 2 with)
-    split_mode
-        str : path and filename of the csv containing the chemistry dataset
-    path
-        str : determines which split mode is used: 0=random split entries, 1=molecule-wise, 2=assay-wise
-    empty_GNN_x
-        int : defines if data_mode==1 how many x-dimension each node should have in the pyg dataset
+    split_mode : str
+        path and filename of the csv containing the chemistry dataset
+    path : str
+        determines which split mode is used: 0=random split entries, 1=molecule-wise, 2=assay-wise
+    empty_GNN_x : int
+        defines if data_mode==1 how many x-dimension each node should have in the pyg dataset
 
     Returns in case of data_mode == 0
     ---------------------------------
@@ -204,7 +207,7 @@ def data_transform_split(
 
     Returns in case of data_mode=1 or datamode=2
     --------------------------------------------
-    data : pytorch geometric Data class
+    data : pytorch_geometric.data.Data
         contains all train and test neg and pos edges plus x-parameter
     """
     # assert split_mode is within accepted range

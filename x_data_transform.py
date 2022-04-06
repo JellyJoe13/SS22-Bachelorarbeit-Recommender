@@ -14,18 +14,19 @@ def transform_and_scale_x_data(
 
     Parameters
     ----------
-    save_to_file
-        bool : determines if a file should be generated for the transformed and scaled data
-    path
-        str : used for specifying the input chemical parameters to load
-    saving_path
-        str : used for specifying the file the data should be written to in case save_to_file is True
-    already_loaded_array
-        np.ndarray : if the dataset has already been loaded, use it instead of loading it from anew
+    save_to_file : bool
+        determines if a file should be generated for the transformed and scaled data
+    path : str
+        used for specifying the input chemical parameters to load
+    saving_path : str
+        used for specifying the file the data should be written to in case save_to_file is True
+    already_loaded_array : np.ndarray
+        if the dataset has already been loaded, use it instead of loading it from anew
 
     Returns
     -------
-    numpy.ndarray containing the transformed and scaled data
+    numpy.ndarray
+        array containing the transformed and scaled data
     """
     load_x = None
     # determine if data needs to be loaded from file or has been provided in parameter
