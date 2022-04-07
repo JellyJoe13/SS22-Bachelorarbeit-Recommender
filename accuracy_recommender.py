@@ -1,7 +1,6 @@
 import sklearn.metrics
 import torch
 import matplotlib.pyplot as plt
-from collections import defaultdict
 import numpy as np
 import pandas as pd
 
@@ -51,6 +50,7 @@ def calc_ROC_curve(
     plt.title("ROC CURVE")
     plt.legend(loc="lower right")
     plt.show()
+    # TODO save plot if path and bool is provided and true
     return
 
 

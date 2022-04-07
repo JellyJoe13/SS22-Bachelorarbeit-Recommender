@@ -2,7 +2,6 @@ import torch_geometric.data
 from torch_geometric.data import Data
 import torch
 import numpy as np
-from scipy import sparse as sp_s
 
 
 class EdgeConvolutionBatcher:
@@ -49,7 +48,7 @@ class EdgeConvolutionBatcher:
         self.is_directed = is_directed
         self.mode_identifier = train_test_identifier
 
-    def reset_index(self):
+    def reset_index(self) -> None:
         """
         Function for resetting to the beginning initializing a new epoch in most cases.
 
@@ -62,7 +61,7 @@ class EdgeConvolutionBatcher:
 
     def do_batch_split(
             self
-    ):
+    ) -> None:
         """
         Function for splitting the input data in batch parts.
 
@@ -141,7 +140,7 @@ class EdgeConvolutionBatcher:
     def neighbor_sampling(
             self,
             node_list: list(torch.Tensor)
-    ):
+    ) -> tuple(torch.Tensor, torch.Tensor):
         """
         Function that executes neighbor sampling of positive edges of given nodes of the dataset.
 
