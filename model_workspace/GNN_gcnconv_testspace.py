@@ -38,6 +38,17 @@ class GNN_GCNConv_homogen(torch.nn.Module):
         x = self.bilinear(x[edge_index_input[0]], x[edge_index_input[1]])
         return self.endflatten(x)
 
+    def _get_name(self) -> str:
+        """
+        Defines a name of the model that is used if an output file is generated.
+
+        Returns
+        -------
+        str
+            Name of the model, used in output files
+        """
+        return "GNN_GCNConv_homogen_minibatch"
+
 
 # unused as y labels will be given through y
 def get_link_labels(
@@ -84,6 +95,25 @@ def test_model_batch(
     # call fit_predict though it will not be fitted due to the @torch.no_grad() annotation
     link_logits = model.fit_predict(data.x, data.edge_index, data.pos_edge_index)
     return link_logits
+
+
+def test_model_advanced(
+        model: GNN_GCNConv_homogen,
+        batcher: edge_batch.EdgeConvolutionBatcher
+) -> tuple(int, int):
+    current_batch = batcher.next_element()
+    batch_loop_storage = []
+    while current_batch:
+        link_logits = test_model_basic(model, current_batch)
+        batch_loop_storage.appen((current_batch.edge_index,
+                                  current_batch.y,
+                                  link_logits))
+        current_batch = batcher.next_element()
+    link_logits = torch.cat([i[0] for i in batch_loop_storage])
+    link_labels = torch.cat([i[1] for i in batch_loop_storage])
+    # todo id back converter needed
+    edge_index = None
+    return
 
 
 # todo: add validation data
