@@ -4,7 +4,9 @@ import torch_geometric.data
 from torch.nn import Bilinear, Flatten
 from torch_geometric.nn import GCNConv, Linear
 import torch.nn.functional as F
+from datetime import datetime
 
+import accuracy_recommender
 import edge_batch
 
 
@@ -38,7 +40,8 @@ class GNN_GCNConv_homogen(torch.nn.Module):
         x = self.bilinear(x[edge_index_input[0]], x[edge_index_input[1]])
         return self.endflatten(x)
 
-    def _get_name(self) -> str:
+    @staticmethod
+    def get_name() -> str:
         """
         Defines a name of the model that is used if an output file is generated.
 
@@ -99,26 +102,40 @@ def test_model_batch(
 
 def test_model_advanced(
         model: GNN_GCNConv_homogen,
-        batcher: edge_batch.EdgeConvolutionBatcher
+        batcher: edge_batch.EdgeConvolutionBatcher,
+        id_breakpoint: int,
+        epoch: int = 0
 ) -> tuple(int, int):
-    current_batch = batcher.next_element()
+    current_batch, retranslation_dict = batcher.next_element()
     batch_loop_storage = []
+    edge_index_transformed = []
     while current_batch:
         link_logits = test_model_basic(model, current_batch)
-        batch_loop_storage.appen((current_batch.edge_index,
-                                  current_batch.y,
+        batch_loop_storage.appen((current_batch.y,
                                   link_logits))
-        current_batch = batcher.next_element()
+        current_batch, retranslation_dict = batcher.next_element()
+        for edge in current_batch.edge_index.T:
+            edge_index_transformed.append([retranslation_dict[edge[0]], retranslation_dict[edge[1]]])
     link_logits = torch.cat([i[0] for i in batch_loop_storage])
     link_labels = torch.cat([i[1] for i in batch_loop_storage])
-    # todo id back converter needed
-    edge_index = None
-    return
+    edge_index_transformed = torch.tensor(edge_index_transformed, dtype=torch.long).T
+    # create name for roc curve plot
+    file_name = model.get_name()+"_epoch-"+str(epoch)+"_"+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    # create roc plot
+    accuracy_recommender.calc_ROC_curve(link_labels,
+                                        link_logits,
+                                        save_as_file=True,
+                                        output_file_name=file_name)
+    # calculate accuracy
+    precision, recall = accuracy_recommender.accuracy_precision_recall(edge_index_transformed,
+                                                                       link_labels,
+                                                                       link_logits,
+                                                                       id_breakpoint)
+    return precision, recall
 
 
 # todo: add validation data
 # todo: early stopping
-# todo: save plots of roc curve
 
 def test_model_basic(
         model: GNN_GCNConv_homogen,

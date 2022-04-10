@@ -183,7 +183,7 @@ class EdgeConvolutionBatcher:
         # return both results
         return edge_sample, new_node_list
 
-    def next_element(self) -> torch_geometric.data.Data:
+    def next_element(self) -> tuple(torch_geometric.data.Data, dict):
         """
         Function used for iterating through the split dataset. Computes random neighbor sampling while loading batch
         data object.
@@ -231,4 +231,6 @@ class EdgeConvolutionBatcher:
                     edge_index=current_edges,
                     pos_edge_index=convolution_edges,
                     y=current_y)
-        return data
+        # invert translation dictionary to be able to turn the ids back to their original forms
+        reverse_dict = {v: k for k, v in translation_dict}
+        return data, reverse_dict
