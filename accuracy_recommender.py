@@ -9,7 +9,7 @@ def calc_ROC_curve(
         link_labels: torch.Tensor,
         link_logits: torch.Tensor,
         save_as_file: bool = False,
-        output_path: str = None
+        output_file_name: str = None
 ) -> None:
     """
     Function calculating the true positive and false positive rate to compute the ROC curve and plot it via
@@ -19,8 +19,9 @@ def calc_ROC_curve(
     ----------
     save_as_file : bool
         controls if the plot should be saved.
-    output_path : str
-        Determines the path and file name where the plot SVG should be put (only if save_as_file is set to True)
+    output_file_name : str
+        Determines the path and file name where the plot SVG should be put (only if save_as_file is set to True).
+        NO FILE ENDING LIKE .PNG ETC!
     link_labels : torch.Tensor
         Inputs the true label of the edge - either 0 (inactive) or 1 (active) for each edge to predict
     link_logits : torch.Tensor
@@ -49,8 +50,10 @@ def calc_ROC_curve(
     plt.ylabel("True Positive Rate")
     plt.title("ROC CURVE")
     plt.legend(loc="lower right")
-    plt.show()
-    # TODO save plot if path and bool is provided and true
+    if save_as_file:
+        plt.savefig("plots/" + output_file_name + ".svg")
+    else:
+        plt.show()
     return
 
 
