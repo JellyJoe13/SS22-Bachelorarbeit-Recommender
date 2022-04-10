@@ -60,11 +60,11 @@ def calc_ROC_curve(
 def accuracy_precision_recall(
         edge_index: torch.Tensor,
         link_labels: torch.Tensor,
-        link_logits: torch.tensor,
-        id_breakpoint: int
-) -> tuple(int, int):
+        link_logits: torch.tensor
+) -> tuple(float, float):
     """
-    Computes the precision and recall of the top k entries. k is determined to be 1% of the input edges.
+    Computes the precision and recall of the top k entries. k is determined to be 1% of the input edges. Assumes a
+    correct input meaning no edges between types or else they could end up in the accuracy scores.
 
     Parameters
     ----------
@@ -74,12 +74,10 @@ def accuracy_precision_recall(
         tensor containing the true labels of the edges
     link_logits : torch.Tensor
         tensor containing the predicted labels of the edges, probability will be calculated afterwards
-    id_breakpoint : int
-        Number indexing until which index of the GNN-id the original assay id and compound id belong
 
     Returns
     -------
-    tuple(int, int)
+    tuple(float, float)
         A tuple containing the precision and recall of the top k entries.
     """
     # determine the k for the top k entries
