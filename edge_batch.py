@@ -234,3 +234,32 @@ class EdgeConvolutionBatcher:
         # invert translation dictionary to be able to turn the ids back to their original forms
         reverse_dict = {v: k for k, v in translation_dict}
         return data, reverse_dict
+
+    def get_element(
+            self,
+            index: int
+    ) -> dict(torch_geometric.data.Data):
+        """
+        Grant index wise access to batch objects stored in this class. Uses function next_element in order to achieve
+        this currently.
+
+        Parameters
+        ----------
+        index : int
+            index of the batch data object to fetch/compute.
+
+        Returns
+        -------
+        torch.data.Data
+            batch data object that was requested
+        """
+        # save the previous index
+        previous_index = self.batch_index
+        # set the new index
+        self.batch_index = index
+        # compute element
+        data = self.next_element()
+        # reset the index to old value
+        self.batch_index = previous_index
+        # return computed batch data object
+        return data
