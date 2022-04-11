@@ -133,9 +133,6 @@ def test_model_advanced(
     return precision, recall
 
 
-# todo: add validation data
-# todo: early stopping
-
 def test_model_basic(
         model: GNN_GCNConv_homogen,
         batcher: edge_batch.EdgeConvolutionBatcher
@@ -202,7 +199,7 @@ def train_model(
     total_edge_count = 0
     # for all batch data objects stored in batcher do
     while current_batch:
-        # get the cound of edges in the batch
+        # get the count of edges in the batch
         current_edge_count = current_batch.edge_index.size(1)
         # execute training for batch and sum loss up
         loss_accumulate += train_model_batch(model, optimizer, current_batch).detach() * current_edge_count
