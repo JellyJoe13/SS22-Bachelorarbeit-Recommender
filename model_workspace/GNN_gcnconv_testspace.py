@@ -11,13 +11,17 @@ class GNN_GCNConv_homogen(torch.nn.Module):
     from Antionio Longa
     """
 
-    def __init__(self,
-                 num_features: int):
+    def __init__(
+            self,
+            num_features_input: int,
+            num_features_hidden: int,
+            num_features_out: int
+    ):
         super(GNN_GCNConv_homogen, self).__init__()
-        self.init_linear = Linear(num_features, num_features)
-        self.conv1 = GCNConv(num_features, int(num_features / 2))
-        self.conv2 = GCNConv(int(num_features / 2), 64)
-        self.bilinear = Bilinear(64, 64, 1)
+        self.init_linear = Linear(num_features_input, num_features_input)
+        self.conv1 = GCNConv(num_features_input, num_features_hidden)
+        self.conv2 = GCNConv(num_features_hidden, num_features_out)
+        self.bilinear = Bilinear(num_features_out, num_features_out, 1)
         self.endflatten = Flatten(0, -1)
 
     def fit_predict(

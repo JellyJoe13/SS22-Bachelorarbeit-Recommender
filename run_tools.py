@@ -79,7 +79,10 @@ def test_model_batch(
 def test_model_advanced(
         model: GNN_GCNConv_homogen,
         batcher: edge_batch.EdgeConvolutionBatcher,
-        epoch: int = 0
+        model_id: int,
+        device,
+        epoch: int = 0,
+        split_mode: int = 0
 ) -> tuple(float, float):
     """
     Execute full test creating a roc curve diagram and calculating the accuracy scores.
@@ -92,6 +95,8 @@ def test_model_advanced(
         batcher from which to fetch the batch data objects from
     epoch : int
         Additional information that is used for naming the saved plot of the roc curve.
+    split_mode : int
+        gives information on what split mode has been used. used for determining the name/path of the diagram.
 
     Returns
     -------
@@ -100,6 +105,8 @@ def test_model_advanced(
     """
     # poll first element from batcher stack
     current_batch, retranslation_dict = batcher.next_element()
+    # transfer data to device
+    current_batch = current_batch.to(device)
     # create empty lists to append the results to in the while loop
     batch_loop_storage = []
     edge_index_transformed = []
@@ -120,7 +127,8 @@ def test_model_advanced(
     link_labels = torch.cat([i[1] for i in batch_loop_storage])
     edge_index_transformed = torch.tensor(edge_index_transformed, dtype=torch.long).T
     # create name for roc curve plot
-    file_name = model.get_name() + "_epoch-" + str(epoch) + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    file_name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \
+                + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     # create roc plot
     accuracy_recommender.calc_ROC_curve(link_labels,
                                         link_logits,
@@ -135,7 +143,8 @@ def test_model_advanced(
 
 def test_model_basic(
         model: GNN_GCNConv_homogen,
-        batcher: edge_batch.EdgeConvolutionBatcher
+        batcher: edge_batch.EdgeConvolutionBatcher,
+        device
 ):
     """
     Takes model and batcher executes all batches and accumulates the logits and labels to calulate and return the roc
@@ -147,13 +156,17 @@ def test_model_basic(
         model of the graph neural network
     batcher : edge_batch.EdgeConvolutionBatcher
         batcher that provides batch data objects to process
+    device : torch.Device
+        device to run the algorithm on
 
     Returns
     -------
     roc auc score of the tested edges
     """
     # poll the next element from the batcher
-    current_batch = batcher.next_element()
+    current_batch, _ = batcher.next_element()
+    # transfer data to device
+    current_batch = current_batch.to(device)
     # create an empty list to put into the testors of the batches
     logits_list = []
     # for all batch objects in the batcher do
@@ -161,7 +174,7 @@ def test_model_basic(
         # execute the test for the batches and append their logits and labels to the storage list
         logits_list.append((test_model_basic(model, current_batch), current_batch.y))
         # poll the next element from the stack
-        current_batch = batcher.next_element()
+        current_batch, _ = batcher.next_element()
     # create the logits and label through concatenating the labels and logits from the batches
     logits = torch.cat([i[0] for i in logits_list])
     labels = torch.cat([i[1] for i in logits_list])
@@ -172,13 +185,16 @@ def test_model_basic(
 def train_model(
         model: GNN_GCNConv_homogen,
         batch_list: edge_batch.EdgeConvolutionBatcher,
-        optimizer
+        optimizer,
+        device
 ):
     """
     Execute the training for one epoch. Returns the averaged loss.
 
     Parameters
     ----------
+    device : torch.Device
+        device to run the algorithm on
     model : GNN_GCNConv_homogen
         model to train
     batch_list : edge_batch.EdgeConvolutionBatcher
@@ -194,7 +210,9 @@ def train_model(
     # define accumulate variable for summing up loss from batches
     loss_accumulate = 0
     # poll a batch data object from the stack
-    current_batch = batch_list.next_element()
+    current_batch, _ = batch_list.next_element()
+    # transfer data to device
+    current_batch = current_batch.to(device)
     # variable for summing up total edge count
     total_edge_count = 0
     # for all batch data objects stored in batcher do
@@ -206,6 +224,6 @@ def train_model(
         # sum edge count up for total edge count
         total_edge_count += current_edge_count
         # poll next batch from batcher
-        current_batch = batch_list.next_element()
+        current_batch, _ = batch_list.next_element()
     # accumulate losses
     return loss_accumulate / total_edge_count
