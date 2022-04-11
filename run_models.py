@@ -1,6 +1,7 @@
-# todo: write whole execution scheme of epochs.... centralized for all models
-# todo: add validation data
-# todo: early stopping
+# todo: write whole execution scheme of epochs.... centralized for all models - partly finished
+# todo: add validation data - partly finished
+# todo: early stopping - partly finished
+# todo: measure overfitting with steffen things
 
 # import section
 from typing import Union
@@ -237,6 +238,8 @@ def full_experimental_run(
     # run epochs
     for epoch in range(max_epochs):
         loss, roc_auc = run_epoch(model, optimizer, batchers["train"], batchers["test"], model_id, device)
+        # todo: add test if val step should be executed
+        # todo: early stop thingy
         val_roc_auc = run_tools.test_model_basic(model, batchers["val"], device)
         if epoch % 5 == 0:
             precision, recall = full_test_run(model, batchers["train"], model_id, epoch, split_mode, device)
