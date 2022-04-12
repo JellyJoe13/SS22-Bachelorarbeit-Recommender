@@ -59,6 +59,18 @@ class EdgeConvolutionBatcher:
         self.batch_index = 0
         return
 
+    # define following function for removing duplicate edges (bidirectional)
+    @staticmethod
+    def remove_undirected_duplicate_edge(edge_index_local: torch.Tensor):
+        # iterate over edges and swap so that one row contains the lower indices - lower diagonal part of
+        # adjacency matrix
+        edge_index_local = edge_index_local.transpose().clone()
+        for edge in edge_index_local:
+            if edge[0] > edge[1]:
+                edge[[0, 1]] = edge[[1, 0]]
+        # make them unique and return them
+        return edge_index_local.unique(dim=0).transpose()
+
     def do_batch_split(
             self
     ) -> None:
@@ -100,20 +112,10 @@ class EdgeConvolutionBatcher:
                 # put selected data into batch list
                 batch_list.append((selected_edge_index, selected_y))
         else:
-            # define following function for removing duplicate edges (bidirectional)
-            def remove_undirected_duplicate_edge(edge_index_local: torch.Tensor):
-                # iterate over edges and swap so that one row contains the lower indices - lower diagonal part of
-                # adjacency matrix
-                edge_index_local = edge_index_local.transpose()
-                for edge in edge_index_local:
-                    if edge[0] > edge[1]:
-                        edge[[0, 1]] = edge[[1, 0]]
-                # make them unique and return them
-                return edge_index_local.unique(dim=0).transpose()
             # create/transform pos section
-            edge_index = remove_undirected_duplicate_edge(self.original_data[self.mode_identifier+"_pos_edge_index"])
+            edge_index = self.remove_undirected_duplicate_edge(self.original_data[self.mode_identifier+"_pos_edge_index"])
             # create/transform neg section
-            neg_edge_index = remove_undirected_duplicate_edge(self.original_data[self.mode_identifier+"_neg_edge_index"])
+            neg_edge_index = self.remove_undirected_duplicate_edge(self.original_data[self.mode_identifier+"_neg_edge_index"])
             # create y
             y = torch.zeros(
                 edge_index.size(1)+neg_edge_index.size(1),
