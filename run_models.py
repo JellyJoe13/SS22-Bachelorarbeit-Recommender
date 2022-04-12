@@ -1,7 +1,8 @@
-# todo: write whole execution scheme of epochs.... centralized for all models - partly finished
-# todo: add validation data - partly finished
-# todo: early stopping - partly finished
+# todo: write whole execution scheme of epochs.... centralized for all models - partly finished II
+# todo: add validation data - control necessary
+# todo: early stopping - control necessary
 # todo: measure overfitting with steffen things
+# todo: setup models
 
 # import section
 from typing import Union
@@ -12,9 +13,11 @@ import torch_geometric.data
 
 import edge_batch
 import run_tools
+import utils.data_protocoller
 from model_workspace.GNN_gcnconv_testspace import GNN_GCNConv_homogen
 from data_gen import data_transform_split
 from edge_batch import EdgeConvolutionBatcher
+from datetime import datetime
 
 
 class ModelLoader:
@@ -30,9 +33,16 @@ class ModelLoader:
                 "num_features_input": 205,
                 "num_features_output": 64,
                 "num_features_hidden": 100,
-                "data_mode": 2
+                "data_mode": 2,
+                "esc": True
             }
         }
+
+    def should_execute_esc(
+            self,
+            model_id: int
+    ) -> bool:
+        return self.model_settings_dict[model_id]["esc"]
 
     def load_model(
             self,
@@ -64,12 +74,23 @@ class ModelLoader:
             edge_index: torch.Tensor,
             percentage: float
     ):
-        # todo: is it a problem for double way edges??? maybe add split in edge_batcher?
+        # check if graph undirected or directed
+        is_directed = True
+        dir_edge_index = edge_batch.EdgeConvolutionBatcher.remove_undirected_duplicate_edge(edge_index)
+        if dir_edge_index.size(1) == int(edge_index.size(0) / 2):
+            is_directed = False
+            edge_index = dir_edge_index
+        else:
+            del dir_edge_index
+        # selection
         index = np.arange(edge_index.size(1))
         np.random.shuffle(index)
-        choosing_border = int(percentage*edge_index.size(1))
+        choosing_border = int(percentage * edge_index.size(1))
         train_set = edge_index[:, index[:choosing_border]]
         val_set = edge_index[:, index[choosing_border:]]
+        if is_directed:
+            train_set = torch.cat([train_set, train_set[[1, 0]]], dim=-1)
+            val_set = torch.cat([val_set, val_set[[1, 0]]], dim=-1)
         return train_set, val_set
 
     def load_model_data(
@@ -79,8 +100,8 @@ class ModelLoader:
             split_mode: int = 0
     ) -> dict(int, EdgeConvolutionBatcher):
         """
-        Comput the batchers for the model type (may differ if other model types are to be used, e.g. different number of
-        convolution layers.)
+        Compute the batchers for the model type (may differ if other model types are to be used, e.g. different
+        number of convolution layers.)
 
         Parameters
         ----------
@@ -106,11 +127,13 @@ class ModelLoader:
             if do_val_split:
                 # take 1% of edges from trainset and transfer it to valset. Do for pos and neg edges likewise
                 # do it for positive edges:
-                data.train_pos_edge_index, data.val_pos_edge_index = self.split_off_val_dataset(data.train_pos_edge_index,
-                                                                                                percentage=0.01)
+                data.train_pos_edge_index, data.val_pos_edge_index = self.split_off_val_dataset(
+                    data.train_pos_edge_index,
+                    percentage=0.01)
                 # do it for negative edges:
-                data.train_neg_edge_index, data.val_neg_edge_index = self.split_off_val_dataset(data.train_neg_edge_index,
-                                                                                                percentage=0.01)
+                data.train_neg_edge_index, data.val_neg_edge_index = self.split_off_val_dataset(
+                    data.train_neg_edge_index,
+                    percentage=0.01)
             # create the batcher for the test edges
             test_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
                                                   convolution_depth=2,
@@ -183,7 +206,8 @@ class EarlyStoppingControl:
         # get the index of the last entered roc auc values
         last_record_position = len(self.roc_tracker) - 1
         # compute the average of the 2 previous entries before the last one
-        comparison_roc_auc = (self.roc_tracker[last_record_position-2] + self.roc_tracker[last_record_position-1]) / 2
+        comparison_roc_auc = (self.roc_tracker[last_record_position - 2] + self.roc_tracker[
+            last_record_position - 1]) / 2
         # return true if the last result was lower than the average of the previous two
         return self.roc_tracker[last_record_position] < comparison_roc_auc
 
@@ -196,6 +220,7 @@ def run_epoch(
         model_id: int,
         device
 ):
+    # todo: do separation in model_loader?
     if model_id in [0, 1, 2]:
         loss = run_tools.train_model(model, train_batcher, optimizer)
         roc_auc = run_tools.test_model_basic(model, test_batcher, device)
@@ -213,6 +238,7 @@ def full_test_run(
         device
 ):
     if model_id in [0, 1, 2]:
+        # todo: do separation in model_loader?
         precision, recall = run_tools.test_model_advanced(model, batcher, model_id, device, epoch=epoch,
                                                           split_mode=split_mode)
         return precision, recall
@@ -234,13 +260,26 @@ def full_experimental_run(
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     optimizer = torch.optim.Adam(params=model.parameters())
-    # todo: control device passing
+    # todo: control device passing controlling
+    # initialize data protocoller
+    name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_" \
+           + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    protocoller = utils.data_protocoller.DataProtocoller(name)
+    # initialize early stopping controller
+    esc = EarlyStoppingControl()
     # run epochs
     for epoch in range(max_epochs):
         loss, roc_auc = run_epoch(model, optimizer, batchers["train"], batchers["test"], model_id, device)
-        # todo: add test if val step should be executed
-        # todo: early stop thingy
-        val_roc_auc = run_tools.test_model_basic(model, batchers["val"], device)
+        protocoller.register_loss(epoch, loss)
+        protocoller.register_roc_auc(epoch, roc_auc)
+        if model_loader.should_execute_esc(model_id):
+            val_roc_auc = run_tools.test_model_basic(model, batchers["val"], device)
+            # pass data to early stopping control
+            esc.put_in_roc_auc(val_roc_auc)
+            if esc.get_should_stop():
+                break
         if epoch % 5 == 0:
             precision, recall = full_test_run(model, batchers["train"], model_id, epoch, split_mode, device)
-        # todo: save and or plot data generated
+            protocoller.register_precision_recall(epoch, precision, recall)
+        # todo: print data to command line to get progress
+    protocoller.save_to_file("experiment_data")
