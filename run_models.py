@@ -64,7 +64,7 @@ def full_experimental_run(
     # load data
     batchers = model_loader.load_model_data(model_id, do_val_split=True, split_mode=split_mode)
     # initialize data and optimizers
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if (torch.cuda.is_available() and model_loader.works_on_cuda(model_id)) else 'cpu')
     model = model.to(device)
     optimizer = torch.optim.Adam(params=model.parameters())
     # todo: control device passing controlling

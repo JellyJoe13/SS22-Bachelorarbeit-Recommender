@@ -26,7 +26,8 @@ class ModelLoader:
                 "num_features_hidden": 100,
                 "data_mode": 2,
                 "esc": True,
-                "is_pytorch": True
+                "is_pytorch": True,
+                "cuda_enabled": True
             }
         }
 
@@ -41,6 +42,15 @@ class ModelLoader:
             model_id: int
     ) -> bool:
         return self.model_settings_dict[model_id]["is_pytorch"]
+
+    def works_on_cuda(
+            self,
+            model_id: int
+    ) -> bool:
+        if self.is_pytorch(model_id):
+            return self.model_settings_dict[model_id]["cuda_enabled"]
+        else:
+            return False
 
     def load_model(
             self,
