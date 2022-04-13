@@ -138,6 +138,8 @@ def test_model_advanced(
     precision, recall = accuracy_recommender.accuracy_precision_recall(edge_index_transformed,
                                                                        link_labels,
                                                                        link_logits)
+    # reset index of batcher
+    batcher.reset_index()
     return precision, recall
 
 
@@ -179,6 +181,8 @@ def test_model_basic(
     # create the logits and label through concatenating the labels and logits from the batches
     logits = torch.cat([i[0] for i in logits_list])
     labels = torch.cat([i[1] for i in logits_list])
+    # reset batcher index
+    batcher.reset_index()
     # calculate roc auc score and return it
     return sklearn.metrics.roc_curve(labels.cpu(), logits.sigmoid().cpu())
 
@@ -226,5 +230,7 @@ def train_model(
         total_edge_count += current_edge_count
         # poll next batch from batcher
         current_batch, _ = batch_list.next_element()
+    # reset index
+    batch_list.reset_index()
     # accumulate losses
     return loss_accumulate / total_edge_count

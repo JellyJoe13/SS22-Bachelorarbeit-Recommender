@@ -8,6 +8,7 @@ from sklearn.metrics import roc_auc_score
 # https://www.geeksforgeeks.org/python-import-from-parent-directory/
 import sys
 import os
+from datetime import datetime
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -139,6 +140,18 @@ class GNN_homogen_chemData_GCN(torch.nn.Module):
         link_labels[:pos_edge_index.size(1)] = 1.
         return link_labels
 
+    @staticmethod
+    def get_name() -> str:
+        """
+        Defines a name of the model that is used if an output file is generated.
+
+        Returns
+        -------
+        str
+            Name of the model, used in output files
+        """
+        return "GNN_GCNConv_homogen_fullbatch"
+
 
 def train(
         model: GNN_homogen_chemData_GCN,
@@ -175,10 +188,11 @@ def train(
 @torch.no_grad()
 def test(
         model: GNN_homogen_chemData_GCN,
-        data: torch_geometric.data.Data
+        data: torch_geometric.data.Data,
+        learn_model: str = "test"
 ):
     """
-    Function used for executing a test of the model using the testdata stored in data.
+    Function used for executing a test of the model using the data stored in the data object.
 
     Parameters
     ----------
@@ -186,6 +200,9 @@ def test(
         model used for testing
     data : torch_geometric.data.Data
         data which contains the test data for the test process
+    learn_model : str
+        learn model which defines which part of the dataset should be tasted. Options: "test", "train", "val". Edges for
+        this learn set must exist in data object
 
     Returns
     -------
@@ -194,30 +211,37 @@ def test(
         learn to learn more about this score.
     """
     model.eval()
-    link_probs = model.decode(model.encode(), data.test_pos_edge_index, data.test_neg_edge_index).sigmoid()
-    link_labels = model.get_link_labels(data.test_pos_edge_index, data.test_neg_edge_index)
+    link_probs = model.decode(model.encode(),
+                              data[learn_model + "_pos_edge_index"],
+                              data[learn_model + "_neg_edge_index"]).sigmoid()
+    link_labels = model.get_link_labels(data[learn_model + "_pos_edge_index"],
+                                        data[learn_model + "_neg_edge_index"])
     return roc_auc_score(link_labels.cpu(), link_probs.cpu())
 
 
-# TODO add option for saving diagram
 @torch.no_grad()
 def full_test(
         model: GNN_homogen_chemData_GCN,
         data: torch_geometric.data.Data,
-        id_breakpoint: int
+        model_id: int,
+        epoch: int = 0,
+        split_mode: int = 0
 ):
     """
     Executes a full test of the model computing the precision, recall and roc curve and plot the latter diagram.
 
     Parameters
     ----------
+    split_mode : int
+        Supplies split mode id for filename choosing
+    epoch : int
+         Supplies epoch for filename choosing
+    model_id : int
+        Supplies model id for filename choosing
     model : GNN_homogen_chemData_GCN
         Model which will be subject to the full_test testing routine
     data : torch_geometric.data.Data
         Data which contains the test data
-    id_breakpoint : int
-        acquired from the data split function in data_gen.py - value after which the transformed ids change to the other
-        node type
 
     Returns
     -------
@@ -231,9 +255,14 @@ def full_test(
     precision, recall = accuracy_precision_recall(torch.cat([data.test_pos_edge_index, data.test_neg_edge_index],
                                                             dim=-1),
                                                   link_labels,
-                                                  link_logits,
-                                                  id_breakpoint)
+                                                  link_logits)
     print("precision:", precision, "\nrecall:", recall)
+    # create file name for plot
+    file_name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \
+                + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     # plot ROC CURVE
-    calc_ROC_curve(link_labels, link_logits)
-    return
+    calc_ROC_curve(link_labels,
+                   link_logits,
+                   save_as_file=True,
+                   output_file_name=file_name)
+    return precision, recall

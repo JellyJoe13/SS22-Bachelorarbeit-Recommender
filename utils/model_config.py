@@ -1,7 +1,11 @@
+import surprise
 import torch
 import numpy as np
 import sys
 import os
+from typing import Union
+
+import torch_geometric.data
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -9,16 +13,28 @@ sys.path.append(parent)
 from model_workspace.GNN_gcnconv_testspace import GNN_GCNConv_homogen
 from edge_batch import EdgeConvolutionBatcher
 from data_gen import data_transform_split
+from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN
+from surprise import SVD
 
 
+# todo: extend to surpriselib
 class ModelLoader:
     def __init__(
             self
     ):
         self.model_storage = {
-            0: GNN_GCNConv_homogen
+            -1: SVD,
+            0: GNN_GCNConv_homogen,
+            1: GNN_homogen_chemData_GCN
         }
         self.model_settings_dict = {
+            -1: {
+                "model": -1,
+                "data_mode": 0,
+                "esc": False,
+                "is_pytorch": False,
+                "is_batching": False
+            },
             0: {
                 "model": 0,
                 "num_features_input": 205,
@@ -27,7 +43,19 @@ class ModelLoader:
                 "data_mode": 2,
                 "esc": True,
                 "is_pytorch": True,
-                "cuda_enabled": True
+                "cuda_enabled": True,
+                "is_batched": True
+            },
+            1: {
+                "model": 1,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 100,
+                "data_mode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": False,
+                "is_batched": False
             }
         }
 
@@ -42,6 +70,15 @@ class ModelLoader:
             model_id: int
     ) -> bool:
         return self.model_settings_dict[model_id]["is_pytorch"]
+
+    def is_batched(
+            self,
+            model_id: int
+    ) -> bool:
+        if self.is_pytorch(model_id):
+            return self.model_settings_dict[model_id]["is_batched"]
+        else:
+            return False
 
     def works_on_cuda(
             self,
@@ -69,13 +106,15 @@ class ModelLoader:
         model
             Model to use for recommender/prediction
         """
+        # todo: reform this to a more logical way
         if model_id in [0, 1, 2]:
             dict_entry = self.model_settings_dict[model_id]
             return self.model_storage[dict_entry["model"]](num_features_input=dict_entry["num_features_input"],
                                                            num_features_hidden=dict_entry["num_features_hidden"],
                                                            num_features_out=dict_entry["num_features_out"])
         else:
-            return None
+            # currently only surpriselib
+            return self.model_storage[self.model_storage[model_id]]()
 
     @staticmethod
     def split_off_val_dataset(
@@ -106,7 +145,7 @@ class ModelLoader:
             model_id: int,
             do_val_split: bool = False,
             split_mode: int = 0
-    ) -> dict(int, EdgeConvolutionBatcher):
+    ) -> Union[dict(int, EdgeConvolutionBatcher), torch_geometric.data.Data, tuple(surprise.trainset.Trainset, list)]:
         """
         Compute the batchers for the model type (may differ if other model types are to be used, e.g. different
         number of convolution layers.)
@@ -121,13 +160,24 @@ class ModelLoader:
             defines which split mode to use, read documentation of data_gen.py in function data_transforma_split to
             learn more
 
-        Returns
-        -------
+        Returns in case of pytorch and minibatching
+        -------------------------------------------
         dict(int, EdgeConvolutionBatcher)
             dict containing the batcher of train, test and val
+
+        Returns in case of pytorch and fullbatch mode
+        ---------------------------------------------
+        torch_geometric.data.Data
+            Data object containing the whole dataset
+
+        Return in case of surpriselib
+        -----------------------------
+        tuple(surprise.trainset.Trainset, list)
+            Tuple containing the trainset and testset which is needed for surpriselib
         """
-        # differ between models/model types
-        if model_id in [0, 1, 2]:
+        # todo: double usage of type parameters is_pytorch and data mode
+        # differ if model to load is pytorch or not
+        if self.is_pytorch(model_id):
             # load the data from storage and with datamode and splitmode
             data, id_breakpoint = data_transform_split(data_mode=self.model_settings_dict[model_id]["data_mode"],
                                                        split_mode=split_mode)
@@ -142,32 +192,37 @@ class ModelLoader:
                 data.train_neg_edge_index, data.val_neg_edge_index = self.split_off_val_dataset(
                     data.train_neg_edge_index,
                     percentage=0.01)
-            # create the batcher for the test edges
-            test_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
-                                                  convolution_depth=2,
-                                                  convolution_neighbor_count=100,
-                                                  is_directed=False,
-                                                  train_test_identifier="test")
-            # create a batcher for the train edges
-            train_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
-                                                   convolution_depth=2,
-                                                   convolution_neighbor_count=100,
-                                                   is_directed=False,
-                                                   train_test_identifier="train")
-            # create a batcher for val edges if it is desired
-            val_batcher = None
-            if do_val_split:
-                val_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
-                                                     convolution_depth=2,
-                                                     convolution_neighbor_count=100,
-                                                     is_directed=False,
-                                                     train_test_identifier="val")
-            # return the three batchers using a dict to not confuse the batchers with each other.
-            return {
-                "train": train_batcher,
-                "test": test_batcher,
-                "val": val_batcher
-            }
+            # determine if we work with minibatching or fullbatching
+            if self.is_batched(model_id):
+                # create the batcher for the test edges
+                test_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
+                                                      convolution_depth=2,
+                                                      convolution_neighbor_count=100,
+                                                      is_directed=False,
+                                                      train_test_identifier="test")
+                # create a batcher for the train edges
+                train_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
+                                                       convolution_depth=2,
+                                                       convolution_neighbor_count=100,
+                                                       is_directed=False,
+                                                       train_test_identifier="train")
+                # create a batcher for val edges if it is desired
+                val_batcher = None
+                if do_val_split:
+                    val_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
+                                                         convolution_depth=2,
+                                                         convolution_neighbor_count=100,
+                                                         is_directed=False,
+                                                         train_test_identifier="val")
+                # return the three batchers using a dict to not confuse the batchers with each other.
+                return {
+                    "train": train_batcher,
+                    "test": test_batcher,
+                    "val": val_batcher
+                }
+            else:
+                # fullbatch mode
+                return data
         else:
-            # other model types (maybe full-batch?)
+            # surpriselib part
             return None
