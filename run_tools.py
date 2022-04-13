@@ -175,6 +175,7 @@ def test_model_basic(
         logits_list.append((test_model_basic(model, current_batch), current_batch.y))
         # poll the next element from the stack
         current_batch, _ = batcher.next_element()
+        # todo: should batch object be detached?
     # create the logits and label through concatenating the labels and logits from the batches
     logits = torch.cat([i[0] for i in logits_list])
     labels = torch.cat([i[1] for i in logits_list])
