@@ -22,10 +22,11 @@ def run_epoch(
         train_batcher: edge_batch.EdgeConvolutionBatcher,
         test_batcher: edge_batch.EdgeConvolutionBatcher,
         model_id: int,
-        device
+        device,
+        model_loader: ModelLoader
 ):
-    # todo: do separation in model_loader?
-    if model_id in [0, 1, 2]:
+    # find out if pytorch or surpriselib methods should be used
+    if model_loader.is_pytorch(model_id):
         loss = run_tools.train_model(model, train_batcher, optimizer)
         roc_auc = run_tools.test_model_basic(model, test_batcher, device)
         return loss, roc_auc
@@ -39,10 +40,11 @@ def full_test_run(
         model_id: int,
         epoch: int,
         split_mode: int,
-        device
+        device,
+        model_loader: ModelLoader
 ):
-    if model_id in [0, 1, 2]:
-        # todo: do separation in model_loader?
+    # find out if the model should use pytorch routines of the routines for surpriselib
+    if model_loader.is_pytorch(model_id):
         precision, recall = run_tools.test_model_advanced(model, batcher, model_id, device, epoch=epoch,
                                                           split_mode=split_mode)
         return precision, recall
@@ -74,7 +76,7 @@ def full_experimental_run(
     esc = EarlyStoppingControl()
     # run epochs
     for epoch in range(max_epochs):
-        loss, roc_auc = run_epoch(model, optimizer, batchers["train"], batchers["test"], model_id, device)
+        loss, roc_auc = run_epoch(model, optimizer, batchers["train"], batchers["test"], model_id, device, model_loader)
         protocoller.register_loss(epoch, loss)
         protocoller.register_roc_auc(epoch, roc_auc)
         print("Epoch:", epoch, "| loss:", float(loss), "| ROC AUC:", float(roc_auc))
@@ -87,14 +89,15 @@ def full_experimental_run(
             if esc.get_should_stop():
                 break
         if epoch % 5 == 0:
-            precision, recall = full_test_run(model, batchers["test"], model_id, epoch, split_mode, device)
+            precision, recall = full_test_run(model, batchers["test"], model_id, epoch, split_mode, device,
+                                              model_loader)
             protocoller.register_precision_recall(epoch, precision, recall)
             # print precision and recall of full_test
             print(" - full_test")
             print("   + precision:", float(precision))
             print("   + recall:", float(recall))
     # execute final full_test
-    precision, recall = full_test_run(model, batchers["test"], model_id, -1, split_mode, device)
+    precision, recall = full_test_run(model, batchers["test"], model_id, -1, split_mode, device, model_loader)
     protocoller.register_precision_recall(-1, precision, recall)
     # save protocolled values to file in folder experiment_data
     protocoller.save_to_file("experiment_data")

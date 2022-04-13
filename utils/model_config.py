@@ -25,7 +25,8 @@ class ModelLoader:
                 "num_features_output": 64,
                 "num_features_hidden": 100,
                 "data_mode": 2,
-                "esc": True
+                "esc": True,
+                "is_pytorch": True
             }
         }
 
@@ -34,6 +35,12 @@ class ModelLoader:
             model_id: int
     ) -> bool:
         return self.model_settings_dict[model_id]["esc"]
+
+    def is_pytorch(
+            self,
+            model_id: int
+    ) -> bool:
+        return self.model_settings_dict[model_id]["is_pytorch"]
 
     def load_model(
             self,
