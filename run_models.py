@@ -50,6 +50,7 @@ def full_test_run(
         return None
 
 
+# todo: progress indication?
 def full_experimental_run(
         max_epochs: int,
         model_loader: ModelLoader,
@@ -76,14 +77,24 @@ def full_experimental_run(
         loss, roc_auc = run_epoch(model, optimizer, batchers["train"], batchers["test"], model_id, device)
         protocoller.register_loss(epoch, loss)
         protocoller.register_roc_auc(epoch, roc_auc)
+        print("Epoch:", epoch, "| loss:", float(loss), "| ROC AUC:", float(roc_auc))
         if model_loader.should_execute_esc(model_id):
             val_roc_auc = run_tools.test_model_basic(model, batchers["val"], device)
             # pass data to early stopping control
             esc.put_in_roc_auc(val_roc_auc)
+            # print Information to command line
+            print(" - val ROC AUC:", float(val_roc_auc))
             if esc.get_should_stop():
                 break
         if epoch % 5 == 0:
-            precision, recall = full_test_run(model, batchers["train"], model_id, epoch, split_mode, device)
+            precision, recall = full_test_run(model, batchers["test"], model_id, epoch, split_mode, device)
             protocoller.register_precision_recall(epoch, precision, recall)
-        # todo: print data to command line to get progress
+            # print precision and recall of full_test
+            print(" - full_test")
+            print("   + precision:", float(precision))
+            print("   + recall:", float(recall))
+    # execute final full_test
+    precision, recall = full_test_run(model, batchers["test"], model_id, -1, split_mode, device)
+    protocoller.register_precision_recall(-1, precision, recall)
+    # save protocolled values to file in folder experiment_data
     protocoller.save_to_file("experiment_data")
