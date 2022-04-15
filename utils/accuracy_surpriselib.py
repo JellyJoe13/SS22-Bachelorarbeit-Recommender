@@ -52,13 +52,37 @@ def calc_ROC_curve(
     return
 
 
-def accuracy_precision_recall(predictions: list(surprise.prediction_algorithms.predictions.Prediction)):
+def accuracy_precision_recall(
+        predictions: list(surprise.prediction_algorithms.predictions.Prediction),
+        mode: str = "constant"
+) -> tuple(float, float):
+    """
+
+    Parameters
+    ----------
+    predictions : list(surprise.prediction_algorithms.predictions.Prediction),
+        contains the predictions of surpriselib acquired with the .test() method. Contains the data with which the
+        scores are to be generated.
+    mode : str
+        either "constant" or "relative". Controls if the k for the top k accuracy scores should be constantly set to 100
+        or if 1% of the input data should be used.
+
+    Returns
+    -------
+    precision, recall : tuple(float, float)
+        precision and recall top k accuracy scores computed with the input data
+    """
+    # assertion section
+    assert (mode == "constant") or (mode == "relative")
     # transform predictions to numpy arrays
     y_true = np.array([pred.r_ui for pred in predictions])
     y_score = np.array([pred.est for pred in predictions])
     ids = np.array([pred.uid for pred in predictions])
     # determine k for the top k entries
-    k = int(y_true.shape[0] / 100)
+    if mode == "constant":
+        k = 100
+    else:
+        k = int(y_true.shape[0] / 100)
     # define threshold
     threshold = 0.5
     # create pandas frame

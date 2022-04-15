@@ -60,7 +60,8 @@ def calc_ROC_curve(
 def accuracy_precision_recall(
         edge_index: torch.Tensor,
         link_labels: torch.Tensor,
-        link_logits: torch.tensor
+        link_logits: torch.tensor,
+        mode: str = "constant"
 ) -> tuple(float, float):
     """
     Computes the precision and recall of the top k entries. k is determined to be 1% of the input edges. Assumes a
@@ -68,6 +69,9 @@ def accuracy_precision_recall(
 
     Parameters
     ----------
+    mode : str
+        either "constant" or "relative". Controls if the k for the top k accuracy scores should be constantly set to 100
+        or if 1% of the input data should be used.
     edge_index : torch.Tensor
         tensor containing the link information which nodes were connected by the labels
     link_labels : torch.Tensor
@@ -80,6 +84,8 @@ def accuracy_precision_recall(
     tuple(float, float)
         A tuple containing the precision and recall of the top k entries.
     """
+    # assertion section
+    assert (mode == "constant") or (mode == "relative")
     # determine the k for the top k entries
     k = int(link_labels.size(0) / 100)
     # set threshold
