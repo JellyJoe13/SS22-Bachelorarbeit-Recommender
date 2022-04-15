@@ -21,3 +21,14 @@ def compute_bpr_loss(
     bpr_loss = torch.mean(F.softplus(combinations))
 
     return bpr_loss
+
+
+def adapter_brp_loss_GNN(
+        link_logits: torch.Tensor,
+        link_labels: torch.Tensor
+):
+    # separate pos and neg labels
+    pos_scores = link_logits[link_labels == 1]
+    neg_scores = link_logits[link_labels == 0]
+    # call real loss function and return value
+    return compute_bpr_loss(pos_scores, neg_scores)
