@@ -3,7 +3,7 @@ import torch
 import numpy as np
 import sys
 import os
-from typing import Union
+import typing
 
 import torch_geometric.data
 
@@ -77,8 +77,8 @@ class ModelLoader:
     def get_loss_function(
             self,
             model_id: int
-    ):
-        return self.loss_function_storage[self.model_settings_dict[model_id]]
+    ) -> typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:
+        return self.loss_function_storage[self.model_settings_dict[model_id]["loss"]]
 
     def is_pytorch(
             self,
@@ -160,7 +160,9 @@ class ModelLoader:
             model_id: int,
             do_val_split: bool = False,
             split_mode: int = 0
-    ) -> Union[dict(int, EdgeConvolutionBatcher), torch_geometric.data.Data, tuple(surprise.trainset.Trainset, list)]:
+    ) -> typing.Union[typing.Dict[int, EdgeConvolutionBatcher],
+                      torch_geometric.data.Data,
+                      typing.Tuple[surprise.trainset.Trainset, list]]:
         """
         Compute the batchers for the model type (may differ if other model types are to be used, e.g. different
         number of convolution layers.)

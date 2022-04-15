@@ -3,6 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import typing
 
 
 def calc_ROC_curve(
@@ -62,7 +63,7 @@ def accuracy_precision_recall(
         link_labels: torch.Tensor,
         link_logits: torch.tensor,
         mode: str = "constant"
-) -> tuple(float, float):
+) -> typing.Tuple[float, float]:
     """
     Computes the precision and recall of the top k entries. k is determined to be 1% of the input edges. Assumes a
     correct input meaning no edges between types or else they could end up in the accuracy scores.

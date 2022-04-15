@@ -2,6 +2,7 @@ import torch_geometric.data
 from torch_geometric.data import Data
 import torch
 import numpy as np
+import typing
 
 
 class EdgeConvolutionBatcher:
@@ -141,8 +142,8 @@ class EdgeConvolutionBatcher:
 
     def neighbor_sampling(
             self,
-            node_list: list(torch.Tensor)
-    ) -> tuple(torch.Tensor, torch.Tensor):
+            node_list: typing.List[torch.Tensor]
+    ) -> typing.Tuple[torch.Tensor, torch.Tensor]:
         """
         Function that executes neighbor sampling of positive edges of given nodes of the dataset.
 
@@ -185,7 +186,7 @@ class EdgeConvolutionBatcher:
         # return both results
         return edge_sample, new_node_list
 
-    def next_element(self) -> tuple(torch_geometric.data.Data, dict):
+    def next_element(self) -> typing.Tuple[torch_geometric.data.Data, dict]:
         """
         Function used for iterating through the split dataset. Computes random neighbor sampling while loading batch
         data object.
@@ -240,7 +241,7 @@ class EdgeConvolutionBatcher:
     def get_element(
             self,
             index: int
-    ) -> dict(torch_geometric.data.Data):
+    ) -> torch_geometric.data.Data:
         """
         Grant index wise access to batch objects stored in this class. Uses function next_element in order to achieve
         this currently.
