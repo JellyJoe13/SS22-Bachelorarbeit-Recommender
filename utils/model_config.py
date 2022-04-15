@@ -242,4 +242,4 @@ class ModelLoader:
                 return data
         else:
             # surpriselib part
-            return None
+            return data_transform_split(0, split_mode)

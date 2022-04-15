@@ -1,3 +1,5 @@
+import typing
+
 import accuracy_recommender
 import edge_batch
 import sklearn.metrics
@@ -83,7 +85,7 @@ def test_model_advanced(
         device,
         epoch: int = 0,
         split_mode: int = 0
-) -> tuple(float, float):
+) -> typing.Tuple[float, float]:
     """
     Execute full test creating a roc curve diagram and calculating the accuracy scores.
 

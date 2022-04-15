@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
 import pandas as pd
+import typing
 
 
 def surpriselib_prediction_to_sklearn(
-        predictions: list(surprise.prediction_algorithms.predictions.Prediction)
-) -> tuple(np.ndarray, np.ndarray):
+        predictions: typing.List[surprise.prediction_algorithms.predictions.Prediction]
+) -> typing.Tuple[np.ndarray, np.ndarray]:
     # determine how many predictions we have and large the reserved arrays should be
     prediction_count = len(predictions)
     # initialize output parameters y_true and y_score
@@ -22,7 +23,7 @@ def surpriselib_prediction_to_sklearn(
 
 
 def calc_ROC_curve(
-        predictions: list(surprise.prediction_algorithms.predictions.Prediction),
+        predictions: typing.List[surprise.prediction_algorithms.predictions.Prediction],
         save_as_file: bool = False,
         output_file_name: str = None
 ) -> None:
@@ -53,9 +54,9 @@ def calc_ROC_curve(
 
 
 def accuracy_precision_recall(
-        predictions: list(surprise.prediction_algorithms.predictions.Prediction),
+        predictions: typing.List[surprise.prediction_algorithms.predictions.Prediction],
         mode: str = "constant"
-) -> tuple(float, float):
+) -> typing.Tuple[float, float]:
     """
 
     Parameters

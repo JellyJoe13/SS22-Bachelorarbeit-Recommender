@@ -2,9 +2,12 @@
 This file is used to copy the developed functions of the Jupyter notebook file(-s) to use them in another notebook.
 The purpose of this file: import data and transform them to model data
 """
+import typing
+
 import pandas
 import pandas as pd
 import surprise
+import torch_geometric.data
 from surprise import Reader, Dataset, SVD
 import numpy as np
 from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit
@@ -56,7 +59,7 @@ def pandas_to_GNN_pyg_edges_v2(
         df: pandas.DataFrame,
         cid_translation_dictionary: dict,
         aid_translation_dictionary: dict
-):
+) -> torch.Tensor:
     """
     Function used for converting a pandas dataset to a pytorch-geometric GNN model.
 
@@ -99,7 +102,7 @@ def smiles_and_rdkit_chem_param_generation(
         cid_translation_dictionary: dict,
         generate: bool = True,
         empty_GNN_x: int = 0
-):
+) -> torch.Tensor:
     """
     Function used to generate the chemical descriptor data used as the node tensor in the GNN
 
@@ -181,7 +184,7 @@ def data_transform_split(
         split_mode: int = 0,
         path: str = "df_assay_entries.csv",
         empty_GNN_x: int = 0
-):
+) -> typing.Union[typing.Tuple[surprise.Trainset, typing.List[tuple]], torch_geometric.data.Data]:
     """
     A function that turns the pandas data into test and train-set data in which the mode determines which type of
     train test splitting is done.
@@ -207,7 +210,7 @@ def data_transform_split(
 
     Returns in case of data_mode=1 or datamode=2
     --------------------------------------------
-    data : pytorch_geometric.data.Data
+    data : torch_geometric.data.Data
         contains all train and test neg and pos edges plus x-parameter
     """
     # assert split_mode is within accepted range
