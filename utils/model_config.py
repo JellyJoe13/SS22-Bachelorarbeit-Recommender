@@ -7,6 +7,8 @@ from typing import Union
 
 import torch_geometric.data
 
+import utils.accuracy.accuarcy_bpr
+
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
@@ -15,6 +17,7 @@ from edge_batch import EdgeConvolutionBatcher
 from data_gen import data_transform_split
 from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN
 from surprise import SVD
+from torch.nn import functional as F
 
 
 # todo: extend to surpriselib
@@ -26,6 +29,10 @@ class ModelLoader:
             -1: SVD,
             0: GNN_GCNConv_homogen,
             1: GNN_homogen_chemData_GCN
+        }
+        self.loss_function_storage = {
+            "binary": F.binary_cross_entropy_with_logits,
+            "bpr": utils.accuracy.accuarcy_bpr.adapter_brp_loss_GNN
         }
         self.model_settings_dict = {
             -1: {
@@ -44,7 +51,8 @@ class ModelLoader:
                 "esc": True,
                 "is_pytorch": True,
                 "cuda_enabled": True,
-                "is_batched": True
+                "is_batched": True,
+                "loss": "binary"
             },
             1: {
                 "model": 1,
@@ -55,7 +63,8 @@ class ModelLoader:
                 "esc": True,
                 "is_pytorch": True,
                 "cuda_enabled": False,
-                "is_batched": False
+                "is_batched": False,
+                "loss": "binary"
             }
         }
 
@@ -64,6 +73,12 @@ class ModelLoader:
             model_id: int
     ) -> bool:
         return self.model_settings_dict[model_id]["esc"]
+
+    def get_loss_function(
+            self,
+            model_id: int
+    ):
+        return self.loss_function_storage[self.model_settings_dict[model_id]]
 
     def is_pytorch(
             self,
