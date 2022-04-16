@@ -181,14 +181,23 @@ class ModelLoader:
         model
             Model to use for recommender/prediction
         """
-        # todo: reform this to a more logical way
-        if model_id in [0, 1, 2]:
+        if self.is_pytorch(model_id):
+            # load corresponding dict entry
             dict_entry = self.model_settings_dict[model_id]
-            return self.model_storage[dict_entry["model"]](num_features_input=dict_entry["num_features_input"],
-                                                           num_features_hidden=dict_entry["num_features_hidden"],
-                                                           num_features_out=dict_entry["num_features_out"])
+            # it is a pytorch model. determine which one
+            model = self.model_storage[dict_entry["model"]]
+            if model == GNN_homogen_chemData_GCN:
+                return model(num_features_input=dict_entry["num_features_input"],
+                             num_features_hidden=dict_entry["num_features_hidden"],
+                             num_features_out=dict_entry["num_features_out"])
+            elif model == GNN_GCNConv_homogen:
+                return model(num_features_input=dict_entry["num_features_input"],
+                             num_features_hidden=dict_entry["num_features_hidden"],
+                             num_features_out=dict_entry["num_features_out"])
+            else:
+                return None
         else:
-            # currently only surpriselib
+            # model is not pytorch, hence it is surpriselib
             return self.model_storage[self.model_storage[model_id]]()
 
     @staticmethod
