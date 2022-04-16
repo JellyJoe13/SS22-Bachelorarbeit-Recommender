@@ -34,6 +34,13 @@ class ModelLoader:
             "binary": F.binary_cross_entropy_with_logits,
             "bpr": utils.accuracy.accuarcy_bpr.adapter_brp_loss_GNN
         }
+        self.convolution_info = {
+            0: {
+                "sample_count": 100,
+                "depth": 2,
+                "neighbor_count": 100
+            }
+        }
         self.model_settings_dict = {
             # surpriselib model with baseline recommender
             -1: {
@@ -96,7 +103,8 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary"
+                "loss": "binary",
+                "sampling_info": 0
             },
             # - pytorch homogen minibatch GCNConv-0 bprloss
             11: {
@@ -109,7 +117,8 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "bpr"
+                "loss": "bpr",
+                "sampling_info": 0
             },
             # TWENTY SECTION - MINIBATCH-NODATA
             # - pytorch homogen minibatch GCNConv-0 binaryloss
@@ -123,7 +132,8 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary"
+                "loss": "binary",
+                "sampling_info": 0
             },
         }
 
@@ -280,24 +290,31 @@ class ModelLoader:
                     percentage=0.01)
             # determine if we work with minibatching or fullbatching
             if self.is_batched(model_id):
+                # fetch model without initialization
+                model = self.model_storage[self.model_settings_dict[model_id]["model"]]
+                # fetch parameters for neighbor sampling
+                sampling_info = self.convolution_info[self.model_settings_dict[model_id]["sampling_info"]]
+                edge_sample_count = sampling_info["sample_count"]
+                convolution_depth = sampling_info["depth"]
+                convolution_neighbor_count = sampling_info["neighbor_count"]
                 # create the batcher for the test edges
-                test_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
-                                                      convolution_depth=2,
-                                                      convolution_neighbor_count=100,
+                test_batcher = EdgeConvolutionBatcher(data, edge_sample_count=edge_sample_count,
+                                                      convolution_depth=convolution_depth,
+                                                      convolution_neighbor_count=convolution_neighbor_count,
                                                       is_directed=False,
                                                       train_test_identifier="test")
                 # create a batcher for the train edges
-                train_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
-                                                       convolution_depth=2,
-                                                       convolution_neighbor_count=100,
+                train_batcher = EdgeConvolutionBatcher(data, edge_sample_count=edge_sample_count,
+                                                       convolution_depth=convolution_depth,
+                                                       convolution_neighbor_count=convolution_neighbor_count,
                                                        is_directed=False,
                                                        train_test_identifier="train")
                 # create a batcher for val edges if it is desired
                 val_batcher = None
                 if do_val_split:
-                    val_batcher = EdgeConvolutionBatcher(data, edge_sample_count=100,
-                                                         convolution_depth=2,
-                                                         convolution_neighbor_count=100,
+                    val_batcher = EdgeConvolutionBatcher(data, edge_sample_count=edge_sample_count,
+                                                         convolution_depth=convolution_depth,
+                                                         convolution_neighbor_count=convolution_neighbor_count,
                                                          is_directed=False,
                                                          train_test_identifier="val")
                 # return the three batchers using a dict to not confuse the batchers with each other.
