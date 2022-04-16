@@ -27,14 +27,15 @@ class ModelLoader:
     ):
         self.model_storage = {
             -1: SVD,
-            0: GNN_GCNConv_homogen,
-            1: GNN_homogen_chemData_GCN
+            0: GNN_homogen_chemData_GCN,
+            1: GNN_GCNConv_homogen,
         }
         self.loss_function_storage = {
             "binary": F.binary_cross_entropy_with_logits,
             "bpr": utils.accuracy.accuarcy_bpr.adapter_brp_loss_GNN
         }
         self.model_settings_dict = {
+            # surpriselib model with baseline recommender
             -1: {
                 "model": -1,
                 "data_mode": 0,
@@ -42,8 +43,51 @@ class ModelLoader:
                 "is_pytorch": False,
                 "is_batching": False
             },
+            # ONEDIGIT SECTION - FULLBATCH
+            # - DATA SECTION
+            #   + pytorch homogen fullbatch GCNConv-0 binaryloss
             0: {
                 "model": 0,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 100,
+                "data_mode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": False,
+                "is_batched": False,
+                "loss": "binary"
+            },
+            #   + pytorch homogen fullbatch GCNConv-0 bprloss
+            1: {
+                "model": 0,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 100,
+                "data_mode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": False,
+                "is_batched": False,
+                "loss": "bpr"
+            },
+            # - NODATA SECTION
+            2: {
+                "model": 0,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 100,
+                "data_mode": 1,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": False,
+                "is_batched": False,
+                "loss": "binary"
+            },
+            # TEN SECTION - MINIBATCH-DATA
+            # - pytorch homogen minibatch GCNConv-0 binaryloss
+            10: {
+                "model": 1,
                 "num_features_input": 205,
                 "num_features_output": 64,
                 "num_features_hidden": 100,
@@ -54,7 +98,8 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "binary"
             },
-            1: {
+            # - pytorch homogen minibatch GCNConv-0 bprloss
+            11: {
                 "model": 1,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -62,10 +107,24 @@ class ModelLoader:
                 "data_mode": 2,
                 "esc": True,
                 "is_pytorch": True,
-                "cuda_enabled": False,
-                "is_batched": False,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "bpr"
+            },
+            # TWENTY SECTION - MINIBATCH-NODATA
+            # - pytorch homogen minibatch GCNConv-0 binaryloss
+            10: {
+                "model": 1,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 100,
+                "data_mode": 1,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
                 "loss": "binary"
-            }
+            },
         }
 
     def should_execute_esc(
