@@ -20,6 +20,8 @@ from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_G
 from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
 from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homogen_basic
 from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_variable
+from model_workspace.GNN_minibatch_homogen_GATConv import GNN_GATConv_homogen
+from model_workspace.GNN_minibatch_homogen_SAGEConv import GNN_SAGEConv_homogen
 
 
 # todo: change is_batching to only convolution info with neg values?
@@ -32,7 +34,9 @@ class ModelLoader:
             0: GNN_homogen_chemData_GCN,
             1: GNN_GCNConv_homogen,
             2: GNN_GCNConv_homogen_basic,
-            3: GNN_LGConv_homogen_variable
+            3: GNN_LGConv_homogen_variable,
+            4: GNN_GATConv_homogen,
+            5: GNN_SAGEConv_homogen
         }
         self.loss_function_storage = {
             "binary": F.binary_cross_entropy_with_logits,
@@ -168,6 +172,63 @@ class ModelLoader:
                 "loss": "binary",
                 "sampling_info": 0
             },
+            # new models
+            # - pytorch homogen minibatch GATConv-1 binaryloss
+            14: {
+                "model": 4,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 100,
+                "datamode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary",
+                "sampling_info": 0
+            },
+            # - pytorch homogen minibatch GATConv-0 binaryloss
+            14: {
+                "model": 4,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 0,
+                "datamode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary",
+                "sampling_info": 1
+            },
+            # - pytorch homogen minibatch SAGEConv-1 binaryloss
+            14: {
+                "model": 5,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 100,
+                "datamode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary",
+                "sampling_info": 0
+            },
+            # - pytorch homogen minibatch SAGEConv-0 binaryloss
+            14: {
+                "model": 5,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 00,
+                "datamode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary",
+                "sampling_info": 0
+            },
             # TWENTY SECTION - MINIBATCH-NODATA
             # - pytorch homogen minibatch GCNConv-0 binaryloss
             10: {
@@ -258,6 +319,14 @@ class ModelLoader:
             elif model == GNN_LGConv_homogen_variable:
                 return model(input_x_features=dict_entry["num_features_input"],
                              number_convolutions=dict_entry["number_convolutions"])
+            elif model == GNN_GATConv_homogen:
+                return model(num_features_input=dict_entry["num_features_input"],
+                             num_features_hidden=dict_entry["num_features_hidden"],
+                             num_features_out=dict_entry["num_features_out"])
+            elif model == GNN_SAGEConv_homogen:
+                return model(num_features_input=dict_entry["num_features_input"],
+                             num_features_hidden=dict_entry["num_features_hidden"],
+                             num_features_out=dict_entry["num_features_out"])
             else:
                 return None
         else:
