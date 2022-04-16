@@ -12,12 +12,14 @@ import utils.accuracy.accuarcy_bpr
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
-from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
 from edge_batch import EdgeConvolutionBatcher
 from data_gen import data_transform_split
-from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN
 from surprise import SVD
 from torch.nn import functional as F
+from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN
+from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
+from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homogen_basic
+from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_variable
 
 
 # todo: change is_batching to only convolution info with neg values?
@@ -29,6 +31,8 @@ class ModelLoader:
             -1: SVD,
             0: GNN_homogen_chemData_GCN,
             1: GNN_GCNConv_homogen,
+            2: GNN_GCNConv_homogen_basic,
+            3: GNN_LGConv_homogen_variable
         }
         self.loss_function_storage = {
             "binary": F.binary_cross_entropy_with_logits,
@@ -38,6 +42,11 @@ class ModelLoader:
             0: {
                 "sample_count": 100,
                 "depth": 2,
+                "neighbor_count": 100
+            },
+            1: {
+                "sample_count": 100,
+                "depth": 1,
                 "neighbor_count": 100
             }
         }
@@ -118,6 +127,45 @@ class ModelLoader:
                 "cuda_enabled": True,
                 "is_batched": True,
                 "loss": "bpr",
+                "sampling_info": 0
+            },
+            # - pytorch homogen minibatch GCNConv-1 binaryloss
+            12: {
+                "model": 2,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "datamode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary",
+                "sampling_info": 1
+            },
+            # - pytorch homogen minibatch LGConv-1 binaryloss
+            13: {
+                "model": 3,
+                "num_features_input": 205,
+                "number_convolutions": 1,
+                "datamode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary",
+                "sampling_info": 1
+            },
+            # - pytorch homogen minibatch LGConv-2 binaryloss
+            14: {
+                "model": 3,
+                "num_features_input": 205,
+                "number_convolutions": 2,
+                "datamode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary",
                 "sampling_info": 0
             },
             # TWENTY SECTION - MINIBATCH-NODATA
@@ -204,6 +252,12 @@ class ModelLoader:
                 return model(num_features_input=dict_entry["num_features_input"],
                              num_features_hidden=dict_entry["num_features_hidden"],
                              num_features_out=dict_entry["num_features_out"])
+            elif model == GNN_GCNConv_homogen_basic:
+                return model(num_features_input=dict_entry["num_features_input"],
+                             num_features_out=dict_entry["num_features_out"])
+            elif model == GNN_LGConv_homogen_variable:
+                return model(input_x_features=dict_entry["num_features_input"],
+                             number_convolutions=dict_entry["number_convolutions"])
             else:
                 return None
         else:
@@ -290,8 +344,6 @@ class ModelLoader:
                     percentage=0.01)
             # determine if we work with minibatching or fullbatching
             if self.is_batched(model_id):
-                # fetch model without initialization
-                model = self.model_storage[self.model_settings_dict[model_id]["model"]]
                 # fetch parameters for neighbor sampling
                 sampling_info = self.convolution_info[self.model_settings_dict[model_id]["sampling_info"]]
                 edge_sample_count = sampling_info["sample_count"]
