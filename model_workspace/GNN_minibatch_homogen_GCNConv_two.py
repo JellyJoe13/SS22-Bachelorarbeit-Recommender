@@ -72,7 +72,7 @@ class GNN_GCNConv_homogen(torch.nn.Module):
         str
             Name of the model, used in output files
         """
-        return "GNN_GCNConv_homogen_minibatch"
+        return "GNN_homogen_minibatch_GCNConv_two"
 
 
 # unused as y labels will be given through y
