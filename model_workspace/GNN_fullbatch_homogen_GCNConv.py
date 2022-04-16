@@ -1,3 +1,5 @@
+import typing
+
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
@@ -156,13 +158,17 @@ class GNN_homogen_chemData_GCN(torch.nn.Module):
 def train(
         model: GNN_homogen_chemData_GCN,
         optimizer: torch.optim.Optimizer,
-        data: torch_geometric.data.Data
+        data: torch_geometric.data.Data,
+        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
 ):
     """
     Function used to execute one training epoch with the objects supplied.
 
     Parameters
     ----------
+    loss_function : typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+        function with two torch.Tensors and returns a torch.Tensor which represents the loss and .backward() will be
+        called from the result.
     model : GNN_homogen_chemData_GCN
         model which will be trained
     optimizer : torch.optim.Optimizer
@@ -179,7 +185,7 @@ def train(
     optimizer.zero_grad()
     link_logits = model.decode(model.encode(), data.train_pos_edge_index, data.train_neg_edge_index)
     link_labels = model.get_link_labels(data.train_pos_edge_index, data.train_neg_edge_index)
-    loss = F.binary_cross_entropy_with_logits(link_logits, link_labels)
+    loss = loss_function(link_logits, link_labels)
     loss.backward()
     optimizer.step()
     return loss
