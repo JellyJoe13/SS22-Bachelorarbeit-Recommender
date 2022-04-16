@@ -13,13 +13,17 @@ from model_workspace.GNN_gcnconv_testspace import GNN_GCNConv_homogen
 def train_model_batch(
         model: GNN_GCNConv_homogen,
         optimizer,
-        data: torch_geometric.data.Data
+        data: torch_geometric.data.Data,
+        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
 ) -> torch.Tensor:
     """
     Helper function that executes the train step for a batch data object.
 
     Parameters
     ----------
+    loss_function : typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+        function with two torch.Tensors and returns a torch.Tensor which represents the loss and .backward() will be
+        called from the result.
     model : GNN_GCNConv_homogen
         model to train on
     optimizer
@@ -41,7 +45,7 @@ def train_model_batch(
     # get true predictions in form of a torch Tensor for loss computation
     link_labels = data.y
     # calculate loss
-    loss = F.binary_cross_entropy_with_logits(link_logits, link_labels)
+    loss = loss_function(link_logits, link_labels)
     # backward optimize loss
     loss.backward()
     # make a step with the optimizer
