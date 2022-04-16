@@ -77,8 +77,9 @@ class ModelLoader:
     def get_loss_function(
             self,
             model_id: int
-    ) -> typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:
-        return self.loss_function_storage[self.model_settings_dict[model_id]["loss"]]
+    ) -> typing.Tuple[str, typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]:
+        loss_name = self.model_settings_dict[model_id]["loss"]
+        return loss_name, self.loss_function_storage[loss_name]
 
     def is_pytorch(
             self,

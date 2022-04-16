@@ -6,6 +6,7 @@
 # todo: check surpriselib working
 
 # import section
+import typing
 from typing import Union
 import torch
 import torch_geometric.data
@@ -28,20 +29,22 @@ def run_epoch(
         data_object: Union[dict, torch_geometric.data.Data],
         model_id: int,
         device,
-        model_loader: ModelLoader
+        model_loader: ModelLoader,
+        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 ):
     if model_loader.is_batched(model_id):
         assert type(data_object) == dict
         train_batcher = data_object["train"]
         test_batcher = data_object["test"]
-        loss = run_tools.train_model(model, train_batcher, optimizer)
+        loss = run_tools.train_model(model, train_batcher, optimizer, loss_function=loss_function)
         roc_auc = run_tools.test_model_basic(model, test_batcher, device)
     else:
         assert type(data_object) == torch_geometric.data.Data
         # fullbatch on pytorch
         loss = model_workspace.GNN_fullbatch_homogen_GCNConv.train(model,
                                                                    optimizer,
-                                                                   data_object).detach()
+                                                                   data_object,
+                                                                   loss_function=loss_function).detach()
         roc_auc = model_workspace.GNN_fullbatch_homogen_GCNConv.test(model,
                                                                      data_object)
     return loss, roc_auc
@@ -90,15 +93,17 @@ def full_experimental_run(
         model = model.to(device)
         optimizer = torch.optim.Adam(params=model.parameters())
         # todo: control device passing controlling
+        # fetch loss and loss name
+        loss_name, loss_function = model_loader.get_loss_function(model_id)
         # initialize data protocoller
         name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_" \
                + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        protocoller = utils.data_protocoller.DataProtocoller(name)
+        protocoller = utils.data_protocoller.DataProtocoller(name, loss_name)
         # initialize early stopping controller
         esc = EarlyStoppingControl()
         # run epochs
         for epoch in range(max_epochs):
-            loss, roc_auc = run_epoch(model, optimizer, data_object, model_id, device, model_loader)
+            loss, roc_auc = run_epoch(model, optimizer, data_object, model_id, device, model_loader, loss_function)
             protocoller.register_loss(epoch, loss)
             protocoller.register_roc_auc(epoch, roc_auc)
             print("Epoch:", epoch, "| loss:", float(loss), "| ROC AUC:", float(roc_auc))

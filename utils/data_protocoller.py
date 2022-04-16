@@ -6,10 +6,14 @@ import torch
 class DataProtocoller:
     def __init__(
             self,
-            name: str
+            name: str,
+            loss_name: str
     ):
         self.name = name
-        self.__epoch_dict = {}
+        self.__epoch_dict = {
+            "name": name,
+            "loss_name": loss_name
+        }
 
     def register_loss(
             self,

@@ -197,13 +197,17 @@ def train_model(
         model: GNN_GCNConv_homogen,
         batch_list: edge_batch.EdgeConvolutionBatcher,
         optimizer,
-        device
+        device,
+        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
 ):
     """
     Execute the training for one epoch. Returns the averaged loss.
 
     Parameters
     ----------
+    loss_function : typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+        function with two torch.Tensors and returns a torch.Tensor which represents the loss and .backward() will be
+        called from the result.
     device : torch.Device
         device to run the algorithm on
     model : GNN_GCNConv_homogen
@@ -231,7 +235,10 @@ def train_model(
         # get the count of edges in the batch
         current_edge_count = current_batch.edge_index.size(1)
         # execute training for batch and sum loss up
-        loss_accumulate += train_model_batch(model, optimizer, current_batch).detach() * current_edge_count
+        loss_accumulate += train_model_batch(model,
+                                             optimizer,
+                                             current_batch,
+                                             loss_function=loss_function).detach() * current_edge_count
         # sum edge count up for total edge count
         total_edge_count += current_edge_count
         # poll next batch from batcher
