@@ -12,7 +12,7 @@ import utils.accuracy.accuarcy_bpr
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
-from model_workspace.GNN_gcnconv_testspace import GNN_GCNConv_homogen
+from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
 from edge_batch import EdgeConvolutionBatcher
 from data_gen import data_transform_split
 from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN

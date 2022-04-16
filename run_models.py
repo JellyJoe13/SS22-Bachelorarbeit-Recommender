@@ -15,7 +15,7 @@ import edge_batch
 import run_tools
 import utils.data_protocoller
 import model_workspace
-from model_workspace.GNN_gcnconv_testspace import GNN_GCNConv_homogen
+from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
 from datetime import datetime
 from utils.model_config import ModelLoader
 from utils.stopping_control import EarlyStoppingControl

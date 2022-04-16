@@ -7,7 +7,7 @@ import torch
 import torch_geometric.data
 import torch.nn.functional as F
 from datetime import datetime
-from model_workspace.GNN_gcnconv_testspace import GNN_GCNConv_homogen
+from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
 
 
 def train_model_batch(
