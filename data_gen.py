@@ -1,7 +1,3 @@
-"""
-This file is used to copy the developed functions of the Jupyter notebook file(-s) to use them in another notebook.
-The purpose of this file: import data and transform them to model data
-"""
 import typing
 
 import pandas
