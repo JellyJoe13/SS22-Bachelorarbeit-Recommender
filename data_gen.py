@@ -170,7 +170,7 @@ def smiles_and_rdkit_chem_param_generation(
             return torch.tensor(data, dtype=torch.float)
     else:
         # no descriptors will be computed
-        if empty_GNN_x == 0:
+        if empty_GNN_x <= 0:
             # in this case the number of parameters shall be the same as the number of descriptors.
             # All values are set to 0
             return torch.tensor(np.ones(shape=((aid_count + cid_count), len(Descriptors.descList))), dtype=torch.float)
