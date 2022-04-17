@@ -15,16 +15,25 @@ from utils.data_related import edge_batch
 import run_tools
 import utils.data_related.data_protocoller
 import model_workspace
-from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
 from datetime import datetime
 from utils.model_config import ModelLoader
 from utils.accuracy.stopping_control import EarlyStoppingControl
 from utils.accuracy import accuracy_surpriselib
 from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN
+from model_workspace.GNN_minibatch_homogen_GATConv import GNN_GATConv_homogen
+from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homogen_basic
+from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
+from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_variable
+from model_workspace.GNN_minibatch_homogen_SAGEConv import GNN_SAGEConv_homogen
 
 
 def run_epoch(
-        model: Union[GNN_GCNConv_homogen, GNN_homogen_chemData_GCN],
+        model: Union[GNN_GCNConv_homogen,
+                     GNN_homogen_chemData_GCN,
+                     GNN_GATConv_homogen,
+                     GNN_GCNConv_homogen_basic,
+                     GNN_LGConv_homogen_variable,
+                     GNN_SAGEConv_homogen],
         optimizer: torch.optim.Optimizer,
         data_object: Union[dict, torch_geometric.data.Data],
         model_id: int,
@@ -51,7 +60,12 @@ def run_epoch(
 
 
 def full_test_run(
-        model: Union[GNN_GCNConv_homogen],
+        model: Union[GNN_GCNConv_homogen,
+                     GNN_homogen_chemData_GCN,
+                     GNN_GATConv_homogen,
+                     GNN_GCNConv_homogen_basic,
+                     GNN_LGConv_homogen_variable,
+                     GNN_SAGEConv_homogen],
         data_object: Union[edge_batch.EdgeConvolutionBatcher, torch_geometric.data.Data],
         model_id: int,
         epoch: int,

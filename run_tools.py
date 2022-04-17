@@ -1,5 +1,9 @@
 import typing
 
+from model_workspace.GNN_minibatch_homogen_GATConv import GNN_GATConv_homogen
+from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homogen_basic
+from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_variable
+from model_workspace.GNN_minibatch_homogen_SAGEConv import GNN_SAGEConv_homogen
 from utils.accuracy import accuracy_recommender
 from utils.data_related import edge_batch
 import sklearn.metrics
@@ -11,7 +15,11 @@ from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homoge
 
 
 def train_model_batch(
-        model: GNN_GCNConv_homogen,
+        model: typing.Union[GNN_GCNConv_homogen,
+                            GNN_GATConv_homogen,
+                            GNN_GCNConv_homogen_basic,
+                            GNN_LGConv_homogen_variable,
+                            GNN_SAGEConv_homogen],
         optimizer,
         data: torch_geometric.data.Data,
         loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
@@ -24,7 +32,11 @@ def train_model_batch(
     loss_function : typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
         function with two torch.Tensors and returns a torch.Tensor which represents the loss and .backward() will be
         called from the result.
-    model : GNN_GCNConv_homogen
+    model : typing.Union[GNN_GCNConv_homogen,
+                         GNN_GATConv_homogen,
+                         GNN_GCNConv_homogen_basic,
+                         GNN_LGConv_homogen_variable,
+                         GNN_SAGEConv_homogen]
         model to train on
     optimizer
         optimizer to optimize with
@@ -56,7 +68,11 @@ def train_model_batch(
 
 @torch.no_grad()
 def test_model_batch(
-        model: GNN_GCNConv_homogen,
+        model: typing.Union[GNN_GCNConv_homogen,
+                            GNN_GATConv_homogen,
+                            GNN_GCNConv_homogen_basic,
+                            GNN_LGConv_homogen_variable,
+                            GNN_SAGEConv_homogen],
         data: torch_geometric.data.Data
 ):
     """
@@ -65,7 +81,11 @@ def test_model_batch(
 
     Parameters
     ----------
-    model : GNN_GCNConv_homogen
+    model : typing.Union[GNN_GCNConv_homogen,
+                         GNN_GATConv_homogen,
+                         GNN_GCNConv_homogen_basic,
+                         GNN_LGConv_homogen_variable,
+                         GNN_SAGEConv_homogen]
         model to run the test on
     data : torch_geometric.data.Data
         data_related with contains the edges, pos_edges and node data_related to run on
@@ -83,7 +103,11 @@ def test_model_batch(
 
 
 def test_model_advanced(
-        model: GNN_GCNConv_homogen,
+        model: typing.Union[GNN_GCNConv_homogen,
+                            GNN_GATConv_homogen,
+                            GNN_GCNConv_homogen_basic,
+                            GNN_LGConv_homogen_variable,
+                            GNN_SAGEConv_homogen],
         batcher: edge_batch.EdgeConvolutionBatcher,
         model_id: int,
         device,
@@ -95,7 +119,11 @@ def test_model_advanced(
 
     Parameters
     ----------
-    model : GNN_GCNConv_homogen
+    model : typing.Union[GNN_GCNConv_homogen,
+                         GNN_GATConv_homogen,
+                         GNN_GCNConv_homogen_basic,
+                         GNN_LGConv_homogen_variable,
+                         GNN_SAGEConv_homogen]
         model on which to test
     batcher : edge_batch.EdgeConvolutionBatcher
         batcher from which to fetch the batch data_related objects from
@@ -150,7 +178,11 @@ def test_model_advanced(
 
 
 def test_model_basic(
-        model: GNN_GCNConv_homogen,
+        model: typing.Union[GNN_GCNConv_homogen,
+                            GNN_GATConv_homogen,
+                            GNN_GCNConv_homogen_basic,
+                            GNN_LGConv_homogen_variable,
+                            GNN_SAGEConv_homogen],
         batcher: edge_batch.EdgeConvolutionBatcher,
         device
 ):
@@ -160,7 +192,11 @@ def test_model_basic(
 
     Parameters
     ----------
-    model : GNN_GCNConv_homogen
+    model : typing.Union[GNN_GCNConv_homogen,
+                         GNN_GATConv_homogen,
+                         GNN_GCNConv_homogen_basic,
+                         GNN_LGConv_homogen_variable,
+                         GNN_SAGEConv_homogen]
         model of the graph neural network
     batcher : edge_batch.EdgeConvolutionBatcher
         batcher that provides batch data_related objects to process
@@ -194,7 +230,11 @@ def test_model_basic(
 
 
 def train_model(
-        model: GNN_GCNConv_homogen,
+        model: typing.Union[GNN_GCNConv_homogen,
+                            GNN_GATConv_homogen,
+                            GNN_GCNConv_homogen_basic,
+                            GNN_LGConv_homogen_variable,
+                            GNN_SAGEConv_homogen],
         batch_list: edge_batch.EdgeConvolutionBatcher,
         optimizer,
         device,
@@ -210,7 +250,11 @@ def train_model(
         called from the result.
     device : torch.Device
         device to run the algorithm on
-    model : GNN_GCNConv_homogen
+    model : typing.Union[GNN_GCNConv_homogen,
+                         GNN_GATConv_homogen,
+                         GNN_GCNConv_homogen_basic,
+                         GNN_LGConv_homogen_variable,
+                         GNN_SAGEConv_homogen]
         model to train
     batch_list : edge_batch.EdgeConvolutionBatcher
         batcher from which to fetch the batch data_related objects
