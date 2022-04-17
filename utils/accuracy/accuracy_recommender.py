@@ -72,7 +72,7 @@ def accuracy_precision_recall(
     ----------
     mode : str
         either "constant" or "relative". Controls if the k for the top k accuracy scores should be constantly set to 100
-        or if 1% of the input data should be used.
+        or if 1% of the input data_related should be used.
     edge_index : torch.Tensor
         tensor containing the link information which nodes were connected by the labels
     link_labels : torch.Tensor
@@ -107,7 +107,7 @@ def accuracy_precision_recall(
     recalls = {}
     # group by id(=user) and calculate the precision and recall for each id grouping
     for df_id, content in df.groupby(by=['id']):
-        # sort the data according to prediction_label with large entries first
+        # sort the data_related according to prediction_label with large entries first
         c = content.sort_values(by=['pred_label'], ascending=False)
         # calculate total number of relations that are active
         n_rel = (c.true_label >= threshold).sum()

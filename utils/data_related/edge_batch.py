@@ -9,7 +9,7 @@ class EdgeConvolutionBatcher:
     """
     Class for batching based on edges and Convolution Layer.
 
-    All edges will be exactly once be present in one batch data object, nodes may appear multiple times. Used for edge
+    All edges will be exactly once be present in one batch data_related object, nodes may appear multiple times. Used for edge
     prediction or learning that uses Convolution layer.
     """
     def __init__(
@@ -35,7 +35,7 @@ class EdgeConvolutionBatcher:
         convolution_neighbor_count : int
             Specifies the number of edges to be sampled from a node while convolution sampling
         is_directed : bool
-            Specifies if the input data is an undirected graph (2 edges for each connection between nodes)
+            Specifies if the input data_related is an undirected graph (2 edges for each connection between nodes)
         train_test_identifier : str
             Specifies if the train or test edges of the dataset should be batched
         """
@@ -76,7 +76,7 @@ class EdgeConvolutionBatcher:
             self
     ) -> None:
         """
-        Function for splitting the input data in batch parts.
+        Function for splitting the input data_related in batch parts.
 
         Does not return anything and will be automatically called in the function next_element().
 
@@ -84,7 +84,7 @@ class EdgeConvolutionBatcher:
         -------
         Nothing
         """
-        # batch list containing the data object batch elements
+        # batch list containing the data_related object batch elements
         batch_list = []
         # differ if we assume an undirected graph or a directed one
         if self.is_directed:
@@ -110,7 +110,7 @@ class EdgeConvolutionBatcher:
                 # select range of y
                 selected_y = y[i:(i + self.edge_sample_count)]
                 # sampling positive edges is not done here but when pulling the next batch with next() function
-                # put selected data into batch list
+                # put selected data_related into batch list
                 batch_list.append((selected_edge_index, selected_y))
         else:
             # create/transform pos section
@@ -128,7 +128,7 @@ class EdgeConvolutionBatcher:
             idx_sort = edge_index[0].sort(dim=-1)
             edge_index = edge_index[:, idx_sort]
             y = y[:, idx_sort]
-            # split edges (only half sample size as each edge exists 2 times in the returned data object
+            # split edges (only half sample size as each edge exists 2 times in the returned data_related object
             for i in range(0, edge_index.size(1), int(self.edge_sample_count/2)):
                 # selected range of indexes
                 selected_edge_index = edge_index[:, i:(i+int(self.edge_sample_count/2))]
@@ -189,12 +189,12 @@ class EdgeConvolutionBatcher:
     def next_element(self) -> typing.Tuple[torch_geometric.data.Data, dict]:
         """
         Function used for iterating through the split dataset. Computes random neighbor sampling while loading batch
-        data object.
+        data_related object.
 
         Returns
         -------
-        data : torch_geometric.data.Data
-            Data object containing the batched fragment of the original input data
+        data_related : torch_geometric.data.Data
+            Data object containing the batched fragment of the original input data_related
         """
         # check if we are still in range of the batch_list
         if not self.batch_index < len(self.batch_list):
@@ -249,12 +249,12 @@ class EdgeConvolutionBatcher:
         Parameters
         ----------
         index : int
-            index of the batch data object to fetch/compute.
+            index of the batch data_related object to fetch/compute.
 
         Returns
         -------
-        torch.data.Data
-            batch data object that was requested
+        torch.data_related.Data
+            batch data_related object that was requested
         """
         # save the previous index
         previous_index = self.batch_index
@@ -264,5 +264,5 @@ class EdgeConvolutionBatcher:
         data = self.next_element()
         # reset the index to old value
         self.batch_index = previous_index
-        # return computed batch data object
+        # return computed batch data_related object
         return data

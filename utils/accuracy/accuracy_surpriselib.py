@@ -2,7 +2,6 @@ import surprise.prediction_algorithms.predictions
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import numpy as np
-from collections import defaultdict
 import pandas as pd
 import typing
 
@@ -27,7 +26,7 @@ def calc_ROC_curve(
         save_as_file: bool = False,
         output_file_name: str = None
 ) -> None:
-    # transform data
+    # transform data_related
     y_true, y_score = surpriselib_prediction_to_sklearn(predictions)
     # use sklearn to get fpr and tpr
     fpr, tpr, _ = metrics.roc_curve(y_true, y_score)
@@ -62,16 +61,16 @@ def accuracy_precision_recall(
     Parameters
     ----------
     predictions : list(surprise.prediction_algorithms.predictions.Prediction),
-        contains the predictions of surpriselib acquired with the .test() method. Contains the data with which the
+        contains the predictions of surpriselib acquired with the .test() method. Contains the data_related with which the
         scores are to be generated.
     mode : str
         either "constant" or "relative". Controls if the k for the top k accuracy scores should be constantly set to 100
-        or if 1% of the input data should be used.
+        or if 1% of the input data_related should be used.
 
     Returns
     -------
     precision, recall : tuple(float, float)
-        precision and recall top k accuracy scores computed with the input data
+        precision and recall top k accuracy scores computed with the input data_related
     """
     # assertion section
     assert (mode == "constant") or (mode == "relative")
@@ -94,7 +93,7 @@ def accuracy_precision_recall(
     recalls = {}
     # group by id(=user) and calculate the precision and recall for each id grouping
     for df_id, content in df.groupby(by=['id']):
-        # sort the data according to prediction_label with large entries first
+        # sort the data_related according to prediction_label with large entries first
         c = content.sort_values(by=['pred_label'], ascending=False)
         # calculate total number of relations that are active
         n_rel = (c.true_label >= threshold).sum()

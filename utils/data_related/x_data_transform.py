@@ -5,31 +5,31 @@ import numpy as np
 
 def transform_and_scale_x_data(
         save_to_file: bool = False,
-        path: str = "data/descriptors_x.csv",
-        saving_path: str = "data/descriptors_x_transformed2.csv",
+        path: str = "data_related/descriptors_x.csv",
+        saving_path: str = "data_related/descriptors_x_transformed2.csv",
         already_loaded_array=None
 ) -> np.ndarray:
     """
-    This function takes the original data from rdkit containing the chemical descriptors and transforms them.
+    This function takes the original data_related from rdkit containing the chemical descriptors and transforms them.
 
     Parameters
     ----------
     save_to_file : bool
-        determines if a file should be generated for the transformed and scaled data
+        determines if a file should be generated for the transformed and scaled data_related
     path : str
         used for specifying the input chemical parameters to load
     saving_path : str
-        used for specifying the file the data should be written to in case save_to_file is True
+        used for specifying the file the data_related should be written to in case save_to_file is True
     already_loaded_array : np.ndarray
         if the dataset has already been loaded, use it instead of loading it from anew
 
     Returns
     -------
     numpy.ndarray
-        array containing the transformed and scaled data
+        array containing the transformed and scaled data_related
     """
     load_x = None
-    # determine if data needs to be loaded from file or has been provided in parameter
+    # determine if data_related needs to be loaded from file or has been provided in parameter
     if already_loaded_array:
         # set load_x to input array
         load_x = already_loaded_array.copy()
@@ -69,7 +69,7 @@ def transform_and_scale_x_data(
     # ZERO ROW HANDLING SECTION
     # in case we encounter zero rows (if we do not offset negative entries) we add a column with random entries
     load_x = np.c_[load_x, np.random.rand(load_x.shape[0])]
-    # load_x is finished and ready to be returned, checking data and optional saving is following
+    # load_x is finished and ready to be returned, checking data_related and optional saving is following
     # DATA CHECKUP SECTION
     # do we have negative entries?
     assert (load_x < 0).sum() == 0
@@ -82,9 +82,9 @@ def transform_and_scale_x_data(
     # SAVING TO FILE SECTION
     # parameter controlled
     if save_to_file:
-        # if the parameter is True this means the transformed data should be written to a file
+        # if the parameter is True this means the transformed data_related should be written to a file
         # save the file
         np.savetxt(saving_path, load_x, delimiter=",")
     # RETURN SECTION
-    # returning the transformed and scaled data
+    # returning the transformed and scaled data_related
     return load_x

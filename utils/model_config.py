@@ -12,8 +12,8 @@ import utils.accuracy.accuarcy_bpr
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
-from edge_batch import EdgeConvolutionBatcher
-from data_gen import data_transform_split
+from utils.data_related.edge_batch import EdgeConvolutionBatcher
+from utils.data_related.data_gen import data_transform_split
 from surprise import SVD
 from torch.nn import functional as F
 from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN
@@ -372,7 +372,7 @@ class ModelLoader:
         Parameters
         ----------
         model_id : int
-            defines which model to use and create batches for loaded data
+            defines which model to use and create batches for loaded data_related
         do_val_split : bool
             defines if a val set shall be created through splitting a part off the trainset
         split_mode : int
@@ -386,7 +386,7 @@ class ModelLoader:
 
         Returns in case of pytorch and fullbatch mode
         ---------------------------------------------
-        torch_geometric.data.Data
+        torch_geometric.data_related.Data
             Data object containing the whole dataset
 
         Return in case of surpriselib
@@ -394,13 +394,13 @@ class ModelLoader:
         tuple(surprise.trainset.Trainset, list)
             Tuple containing the trainset and testset which is needed for surpriselib
         """
-        # todo: double usage of type parameters is_pytorch and data mode
+        # todo: double usage of type parameters is_pytorch and data_related mode
         # differ if model to load is pytorch or not
         if self.is_pytorch(model_id):
-            # load the data from storage and with datamode and splitmode
+            # load the data_related from storage and with datamode and splitmode
             data, id_breakpoint = data_transform_split(data_mode=self.model_settings_dict[model_id]["data_mode"],
                                                        split_mode=split_mode)
-            # processing of train data if we should generate a val dataset
+            # processing of train data_related if we should generate a val dataset
             if do_val_split:
                 # take 1% of edges from trainset and transfer it to valset. Do for pos and neg edges likewise
                 # do it for positive edges:

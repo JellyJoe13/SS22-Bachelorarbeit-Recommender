@@ -1,5 +1,5 @@
 # todo: write whole execution scheme of epochs.... centralized for all models - partly finished II
-# todo: add validation data - control necessary
+# todo: add validation data_related - control necessary
 # todo: early stopping - control necessary
 # todo: measure overfitting with steffen things
 # todo: setup models
@@ -11,15 +11,15 @@ from typing import Union
 import torch
 import torch_geometric.data
 
-import edge_batch
+from utils.data_related import edge_batch
 import run_tools
-import utils.data_protocoller
+import utils.data_related.data_protocoller
 import model_workspace
 from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
 from datetime import datetime
 from utils.model_config import ModelLoader
-from utils.stopping_control import EarlyStoppingControl
-from utils import accuracy_surpriselib
+from utils.accuracy.stopping_control import EarlyStoppingControl
+from utils.accuracy import accuracy_surpriselib
 from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN
 
 
@@ -86,19 +86,19 @@ def full_experimental_run(
         # we have a pytorch model
         # load model to test
         model = model_loader.load_model(model_id)
-        # load data
+        # load data_related
         data_object = model_loader.load_model_data(model_id, do_val_split=True, split_mode=split_mode)
-        # initialize data and optimizers
+        # initialize data_related and optimizers
         device = torch.device('cuda' if (torch.cuda.is_available() and model_loader.works_on_cuda(model_id)) else 'cpu')
         model = model.to(device)
         optimizer = torch.optim.Adam(params=model.parameters())
         # todo: control device passing controlling
         # fetch loss and loss name
         loss_name, loss_function = model_loader.get_loss_function(model_id)
-        # initialize data protocoller
+        # initialize data_related protocoller
         name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_" \
                + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        protocoller = utils.data_protocoller.DataProtocoller(name, loss_name)
+        protocoller = utils.data.data_protocoller.DataProtocoller(name, loss_name)
         # initialize early stopping controller
         esc = EarlyStoppingControl()
         # run epochs
@@ -116,7 +116,7 @@ def full_experimental_run(
                     assert type(data_object) == torch_geometric.data.Data
                     # we have fullbatch in pytorch
                     val_roc_auc = model_workspace.GNN_fullbatch_homogen_GCNConv.test(model, data_object, "val")
-                # pass data to early stopping control
+                # pass data_related to early stopping control
                 esc.put_in_roc_auc(val_roc_auc)
                 # print Information to command line
                 print(" - val ROC AUC:", float(val_roc_auc))

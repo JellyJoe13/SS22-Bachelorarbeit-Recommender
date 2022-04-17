@@ -23,9 +23,9 @@ class GNN_GCNConv_homogen_basic(torch.nn.Module):
             edge_index_input: torch.Tensor,
             pos_edge_index_input: torch.Tensor
     ) -> torch.Tensor:
-        # push input data through Linear Layer that determines how important each feature of the node is
+        # push input data_related through Linear Layer that determines how important each feature of the node is
         x = self.init_linear(x_input)
-        # run data and positive edge connectivity through convolution Layer
+        # run data_related and positive edge connectivity through convolution Layer
         x = self.conv(x, pos_edge_index_input)
         # convert the node embedding that was generated to the edge score/logits
         x = self.bilinear(x[edge_index_input[0]], x[edge_index_input[1]])

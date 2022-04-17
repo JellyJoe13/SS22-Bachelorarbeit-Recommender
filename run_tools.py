@@ -1,7 +1,7 @@
 import typing
 
-import accuracy_recommender
-import edge_batch
+from utils.accuracy import accuracy_recommender
+from utils.data_related import edge_batch
 import sklearn.metrics
 import torch
 import torch_geometric.data
@@ -17,7 +17,7 @@ def train_model_batch(
         loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
 ) -> torch.Tensor:
     """
-    Helper function that executes the train step for a batch data object.
+    Helper function that executes the train step for a batch data_related object.
 
     Parameters
     ----------
@@ -29,12 +29,12 @@ def train_model_batch(
     optimizer
         optimizer to optimize with
     data : torch_geometric.data.Data
-        data used for the train process. shall contain x,y, edge_index and pos_edge_index
+        data_related used for the train process. shall contain x,y, edge_index and pos_edge_index
 
     Returns
     -------
     loss : torch.Tensor
-        loss of the batch data object
+        loss of the batch data_related object
     """
     # set the model to train mode
     model.train()
@@ -60,7 +60,7 @@ def test_model_batch(
         data: torch_geometric.data.Data
 ):
     """
-    Helper function that executes a simple evaluation for a batch data object and determines the logits of the edges to
+    Helper function that executes a simple evaluation for a batch data_related object and determines the logits of the edges to
     predict.
 
     Parameters
@@ -68,7 +68,7 @@ def test_model_batch(
     model : GNN_GCNConv_homogen
         model to run the test on
     data : torch_geometric.data.Data
-        data with contains the edges, pos_edges and node data to run on
+        data_related with contains the edges, pos_edges and node data_related to run on
 
     Returns
     -------
@@ -98,7 +98,7 @@ def test_model_advanced(
     model : GNN_GCNConv_homogen
         model on which to test
     batcher : edge_batch.EdgeConvolutionBatcher
-        batcher from which to fetch the batch data objects from
+        batcher from which to fetch the batch data_related objects from
     epoch : int
         Additional information that is used for naming the saved plot of the roc curve.
     split_mode : int
@@ -111,12 +111,12 @@ def test_model_advanced(
     """
     # poll first element from batcher stack
     current_batch, retranslation_dict = batcher.next_element()
-    # transfer data to device
+    # transfer data_related to device
     current_batch = current_batch.to(device)
     # create empty lists to append the results to in the while loop
     batch_loop_storage = []
     edge_index_transformed = []
-    # for all batch data objects in batcher do
+    # for all batch data_related objects in batcher do
     while current_batch:
         # execute test model batch which gets the logits of the edges
         link_logits = test_model_batch(model, current_batch)
@@ -163,7 +163,7 @@ def test_model_basic(
     model : GNN_GCNConv_homogen
         model of the graph neural network
     batcher : edge_batch.EdgeConvolutionBatcher
-        batcher that provides batch data objects to process
+        batcher that provides batch data_related objects to process
     device : torch.Device
         device to run the algorithm on
 
@@ -173,7 +173,7 @@ def test_model_basic(
     """
     # poll the next element from the batcher
     current_batch, _ = batcher.next_element()
-    # transfer data to device
+    # transfer data_related to device
     current_batch = current_batch.to(device)
     # create an empty list to put into the testors of the batches
     logits_list = []
@@ -213,7 +213,7 @@ def train_model(
     model : GNN_GCNConv_homogen
         model to train
     batch_list : edge_batch.EdgeConvolutionBatcher
-        batcher from which to fetch the batch data objects
+        batcher from which to fetch the batch data_related objects
     optimizer
         Optimizer to use for training the model
 
@@ -224,13 +224,13 @@ def train_model(
     """
     # define accumulate variable for summing up loss from batches
     loss_accumulate = 0
-    # poll a batch data object from the stack
+    # poll a batch data_related object from the stack
     current_batch, _ = batch_list.next_element()
-    # transfer data to device
+    # transfer data_related to device
     current_batch = current_batch.to(device)
     # variable for summing up total edge count
     total_edge_count = 0
-    # for all batch data objects stored in batcher do
+    # for all batch data_related objects stored in batcher do
     while current_batch:
         # get the count of edges in the batch
         current_edge_count = current_batch.edge_index.size(1)

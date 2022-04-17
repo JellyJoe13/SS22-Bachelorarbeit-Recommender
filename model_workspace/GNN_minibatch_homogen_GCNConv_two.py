@@ -31,13 +31,13 @@ class GNN_GCNConv_homogen(torch.nn.Module):
             pos_edge_index_input: torch.Tensor
     ) -> torch.Tensor:
         """
-        Fit and predict function of the graph neural network predictor. Calculates a node embedding using the node data
+        Fit and predict function of the graph neural network predictor. Calculates a node embedding using the node data_related
         and positive edges in the graph and then uses this embedding to calculate the logits.
 
         Parameters
         ----------
         x_input : torch.Tensor
-            tensor containing the data of the nodes
+            tensor containing the data_related of the nodes
         edge_index_input : torch.Tensor
             tensor containing the edges to predict
         pos_edge_index_input : torch.Tensor

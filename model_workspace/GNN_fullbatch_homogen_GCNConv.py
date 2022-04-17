@@ -16,8 +16,7 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 # import section
-from data_gen import data_transform_split
-from accuracy_recommender import accuracy_precision_recall, calc_ROC_curve
+from utils.accuracy.accuracy_recommender import accuracy_precision_recall, calc_ROC_curve
 
 
 class GNN_homogen_chemData_GCN(torch.nn.Module):
@@ -40,7 +39,7 @@ class GNN_homogen_chemData_GCN(torch.nn.Module):
         Parameters
         ----------
         num_features_input : int
-            Specifies how many input features to expect and work with in the input data
+            Specifies how many input features to expect and work with in the input data_related
         num_features_hidden : int
             Specifies how many hidden nodes of convolution layer there should be in the model
         num_features_out : int
@@ -55,12 +54,12 @@ class GNN_homogen_chemData_GCN(torch.nn.Module):
             data: torch_geometric.data.Data
     ) -> torch.Tensor:
         """
-        Function for encoding the data - generating the node embedding.
+        Function for encoding the data_related - generating the node embedding.
 
         Parameters
         ----------
         data : torch_geometric.data.Data
-            Supplies the data object with the node features and known positive edges (as train_pos_edge_index)
+            Supplies the data_related object with the node features and known positive edges (as train_pos_edge_index)
 
         Returns
         -------
@@ -125,9 +124,9 @@ class GNN_homogen_chemData_GCN(torch.nn.Module):
         device : torch.device
             device on which the tensor shall be deployed. Learn more about this in the pytorch documentation
         pos_edge_index : torch.Tensor
-            positive data edges
+            positive data_related edges
         neg_edge_index : torch.Tensor
-            negative data edges
+            negative data_related edges
 
         Returns
         -------
@@ -173,8 +172,8 @@ def train(
         model which will be trained
     optimizer : torch.optim.Optimizer
         optimizer used for training process
-    data : torch.data.Data
-        data on which the model will be trained
+    data : torch.data_related.Data
+        data_related on which the model will be trained
 
     Returns
     -------
@@ -198,17 +197,17 @@ def test(
         learn_model: str = "test"
 ):
     """
-    Function used for executing a test of the model using the data stored in the data object.
+    Function used for executing a test of the model using the data_related stored in the data_related object.
 
     Parameters
     ----------
     model : GNN_homogen_chemData_GCN
         model used for testing
     data : torch_geometric.data.Data
-        data which contains the test data for the test process
+        data_related which contains the test data_related for the test process
     learn_model : str
         learn model which defines which part of the dataset should be tasted. Options: "test", "train", "val". Edges for
-        this learn set must exist in data object
+        this learn set must exist in data_related object
 
     Returns
     -------
@@ -247,7 +246,7 @@ def full_test(
     model : GNN_homogen_chemData_GCN
         Model which will be subject to the full_test testing routine
     data : torch_geometric.data.Data
-        Data which contains the test data
+        Data which contains the test data_related
 
     Returns
     -------

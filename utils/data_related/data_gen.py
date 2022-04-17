@@ -62,7 +62,7 @@ def pandas_to_GNN_pyg_edges_v2(
     Parameters
     ----------
     df : pandas.DataFrame
-        pandas dataframe containing the data to transform
+        pandas dataframe containing the data_related to transform
     cid_translation_dictionary : dict
         dictionary containing the mapping of cid's to new ids to use in the GNN
     aid_translation_dictionary : dict
@@ -71,9 +71,9 @@ def pandas_to_GNN_pyg_edges_v2(
     Returns
     -------
     torch.tensor
-        Tensor containing the transformed data - the edges of the GNN
+        Tensor containing the transformed data_related - the edges of the GNN
     """
-    # faster function to convert the pandas dataframe to GNN pytorch data
+    # faster function to convert the pandas dataframe to GNN pytorch data_related
     # map ids to GNN id
     df['id_1'] = df['aid'].map(lambda x: aid_translation_dictionary[x])
     df['id_2'] = df['cid'].map(lambda x: cid_translation_dictionary[x])
@@ -100,12 +100,12 @@ def smiles_and_rdkit_chem_param_generation(
         empty_GNN_x: int = 0
 ) -> torch.Tensor:
     """
-    Function used to generate the chemical descriptor data used as the node tensor in the GNN
+    Function used to generate the chemical descriptor data_related used as the node tensor in the GNN
 
     Parameters
     ----------
     df : pandas.DataFrame
-        pandas dataframe : Input data which contains the SMILES data of the molecules to transform
+        pandas dataframe : Input data_related which contains the SMILES data_related of the molecules to transform
     aid_count : int
         Integer telling the algorithm how many experiment ids there are; used for space allocation and indexing
     cid_count : int
@@ -113,14 +113,14 @@ def smiles_and_rdkit_chem_param_generation(
     cid_translation_dictionary : dict
         Dictionary used for translating the compound ids to GNN ids
     generate : bool
-        Truth value determining if or if not node data will be generated
+        Truth value determining if or if not node data_related will be generated
     empty_GNN_x : int
         Integer specifying how many node features the ouput tensor should have if generate is set to False
 
     Returns
     -------
     torch.tensor
-        Tensor containing the node data of the GNN
+        Tensor containing the node data_related of the GNN
     """
     # simple check if empty_GNN_x is properly used
     assert empty_GNN_x >= 0
@@ -130,13 +130,13 @@ def smiles_and_rdkit_chem_param_generation(
     # SEPARATING BETWEEN MODES missing
     if generate:
         # Modus where rdkit is used to generate the descriptors. any empty_GNN_x is ignored (currently)
-        # Note: this is very time-consuming so that the pre-generated x is stored in a csv file in the data folder.
+        # Note: this is very time-consuming so that the pre-generated x is stored in a csv file in the data_related folder.
         # if the file exists we load it from there
-        if exists("data/descriptors_x_transformed2.csv"):
-            load_x = np.nan_to_num(np.loadtxt("data/descriptors_x_transformed2.csv", delimiter=","), nan=0)
+        if exists("../../data/descriptors_x_transformed2.csv"):
+            load_x = np.nan_to_num(np.loadtxt("data_related/descriptors_x_transformed2.csv", delimiter=","), nan=0)
             return torch.tensor(load_x, dtype=torch.float)
         # if the chemical descriptor file does not exist, generate and save it (as it takes 1h52 to compute it
-        if exists("data/descriptors_x.csv"):
+        if exists("../../data/descriptors_x.csv"):
             # create x array
             x = np.zeros(shape=((aid_count + cid_count), len(Descriptors.descList)))
             # iterate over filtered and sorted table
@@ -154,14 +154,14 @@ def smiles_and_rdkit_chem_param_generation(
             # without generating NaN or Inf
             # values
             x = transform_and_scale_x_data(save_to_file=True,
-                                           saving_path="data/descriptors_x_transformed2.csv",
+                                           saving_path="../../data/descriptors_x_transformed2.csv",
                                            already_loaded_array=x)
             return torch.tensor(x, dtype=torch.float)
         else:
             # chemical descriptor csv exists but transformed version doesn't, so load it and save the generated array
             data = transform_and_scale_x_data(save_to_file=True,
-                                              saving_path="data/descriptors_x_transformed2.csv",
-                                              path="data/descriptors_x.csv")
+                                              saving_path="../../data/descriptors_x_transformed2.csv",
+                                              path="../../data/descriptors_x.csv")
             # turn it into a torch tensor and return it
             return torch.tensor(data, dtype=torch.float)
     else:
@@ -182,13 +182,13 @@ def data_transform_split(
         empty_GNN_x: int = 0
 ) -> typing.Union[typing.Tuple[surprise.Trainset, typing.List[tuple]], torch_geometric.data.Data]:
     """
-    A function that turns the pandas data into test and train-set data in which the mode determines which type of
+    A function that turns the pandas data_related into test and train-set data_related in which the mode determines which type of
     train test splitting is done.
 
     Parameters
     ----------
     data_mode : int
-        defines if the desired output is a surprise data package (0) or the torch_geometric data
+        defines if the desired output is a surprise data_related package (0) or the torch_geometric data_related
         (1 without rdkit information; 2 with)
     split_mode : str
         path and filename of the csv containing the chemistry dataset
@@ -200,13 +200,13 @@ def data_transform_split(
     Returns in case of data_mode == 0
     ---------------------------------
     trainset : surprise Trainset class
-        Contains the data to train on
+        Contains the data_related to train on
     testset : list of tuples with format (aid, cid, rating)
-        Contains the data to test the Recommender algorithm on
+        Contains the data_related to test the Recommender algorithm on
 
     Returns in case of data_mode=1 or datamode=2
     --------------------------------------------
-    data : torch_geometric.data.Data
+    data_related : torch_geometric.data.Data
         contains all train and test neg and pos edges plus x-parameter
     """
     # assert split_mode is within accepted range
@@ -217,7 +217,7 @@ def data_transform_split(
     assert data_mode <= 2
     # assert for empty_GNN_x
     assert empty_GNN_x >= 0
-    # import data
+    # import data_related
     df = pd.read_csv(path)
     # define empty split variable for differing split types of groupwise and randomwise splitting
     split = None
@@ -241,9 +241,9 @@ def data_transform_split(
     for i, j in split:
         train_ind = i
         test_ind = j
-    # now we have the indexes of the split data. Left to do is use this and create the data package of choice 
+    # now we have the indexes of the split data_related. Left to do is use this and create the data_related package of choice
     if data_mode == 0:
-        # data mode of surprise package
+        # data_related mode of surprise package
         # here we need to remodel the column activity to 0 and 1 boolean entries
         df['rating'] = df['activity'].map(lambda x: int(x == 'active'))
         # define reader to convert pandas dataframe to surprise package
