@@ -40,7 +40,8 @@ def calc_ROC_curve(
     roc_auc = sklearn.metrics.auc(false_positive_rate, true_positive_rate)
     # plot the ROC CURVE
     '''
-    Following code is inspired or partially copied from https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#sphx-glr-auto-examples-model-selection-plot-roc-py
+    Following code is inspired or partially copied from 
+    https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#sphx-glr-auto-examples-model-selection-plot-roc-py
     '''
     plt.figure()
     plt.plot(false_positive_rate, true_positive_rate, color="darkorange", label="ROC curve (ROC AUC=%0.2f)" % roc_auc)
@@ -88,8 +89,8 @@ def accuracy_precision_recall(
         A tuple containing the precision and recall of the top k entries in case the mode is either "constant" or
         "relative"
     tuple(tuple(float, float), tuple(float, float))
-        A tuple containing both precision and recall scores for both "constant" and "relative" mode in a fashion
-        (precision_constant, precision_relative), (recall_constant, recall_relative)
+        If mode is "both" returns a tuple containing both precision and recall scores for both "constant" and "relative"
+        mode in a fashion (precision_constant, precision_relative), (recall_constant, recall_relative)
     """
     # assertion section
     assert (mode == "constant") or (mode == "relative") or (mode == "both")
