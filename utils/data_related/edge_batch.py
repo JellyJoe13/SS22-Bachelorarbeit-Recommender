@@ -63,6 +63,20 @@ class EdgeConvolutionBatcher:
     # define following function for removing duplicate edges (bidirectional)
     @staticmethod
     def remove_undirected_duplicate_edge(edge_index_local: torch.Tensor):
+        """
+        Function used for removing duplicate edges (if edge (x,y) also exists as (y,x) in graph) which could be better
+        to include in splitting as required node per split can be reduced.
+
+        Parameters
+        ----------
+        edge_index_local : torch.Tensor
+            edge index to search for duplicate entries in
+
+        Returns
+        -------
+        torch.Tensor
+            edge index which was input but without the edges but without duplicate edges
+        """
         # iterate over edges and swap so that one row contains the lower indices - lower diagonal part of
         # adjacency matrix
         edge_index_local = edge_index_local.transpose().clone()
