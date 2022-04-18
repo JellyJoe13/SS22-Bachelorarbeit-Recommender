@@ -36,6 +36,7 @@ class EarlyStoppingControl:
         bool
             True if the learning should stop, False if it could continue
         """
+        # todo: rework this as we may need a condition to do at least 10 iterations
         # if we do not have 3 entries yet do not stop the training process in any case
         if self.roc_tracker < 3:
             return False
