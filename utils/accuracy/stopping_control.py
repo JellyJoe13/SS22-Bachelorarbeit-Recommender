@@ -1,4 +1,7 @@
 class EarlyStoppingControl:
+    """
+    Class used for controlling if the training process should stop before the max iteration count is reached.
+    """
     def __init__(self):
         self.roc_tracker = []
 
