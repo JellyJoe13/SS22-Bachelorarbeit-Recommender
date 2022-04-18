@@ -29,6 +29,9 @@ class ModelLoader:
     def __init__(
             self
     ):
+        """
+        Initialize ModelLoader. Sets all relevant configurations.
+        """
         self.model_storage = {
             -1: SVD,
             0: GNN_homogen_chemData_GCN,
@@ -250,12 +253,37 @@ class ModelLoader:
             self,
             model_id: int
     ) -> bool:
+        """
+        Function that returns a boolean if early stopping should be executed for the model corresponding to the model_id
+
+        Parameters
+        ----------
+        model_id : int
+            Model id for which the early stopping property should be returned
+
+        Returns
+        -------
+        bool
+            Bool indicating if early stopping principle should be executed or not.
+        """
         return self.model_settings_dict[model_id]["esc"]
 
     def get_loss_function(
             self,
             model_id: int
     ) -> typing.Tuple[str, typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]]:
+        """
+        Function that returns the corresponding loss function for the model corresponding the the provided model_id.
+
+        Parameters
+        ----------
+        model_id : int
+            model id for which the loss function should be returned.
+
+        Returns
+        -------
+        loss_function : function
+        """
         loss_name = self.model_settings_dict[model_id]["loss"]
         return loss_name, self.loss_function_storage[loss_name]
 
@@ -263,12 +291,38 @@ class ModelLoader:
             self,
             model_id: int
     ) -> bool:
+        """
+        Function checking if the model with the corresponding model_id is a pytorch model or not.
+
+        Parameters
+        ----------
+        model_id : int
+            model id for which the loss function should be returned.
+
+        Returns
+        -------
+        bool
+            Bool indicating if the model is a pytorch model or not
+        """
         return self.model_settings_dict[model_id]["is_pytorch"]
 
     def is_batched(
             self,
             model_id: int
     ) -> bool:
+        """
+        Function checking if the model with the corresponding model_id is a batched or not.
+
+        Parameters
+        ----------
+        model_id : int
+            model id for which the loss function should be returned.
+
+        Returns
+        -------
+        bool
+            Bool indicating if the model is batched or not.
+        """
         if self.is_pytorch(model_id):
             return self.model_settings_dict[model_id]["is_batched"]
         else:
@@ -278,6 +332,19 @@ class ModelLoader:
             self,
             model_id: int
     ) -> bool:
+        """
+        Function checking if the model corresponding to the model_id works on cuda or not.
+
+        Parameters
+        ----------
+        model_id : int
+            model id for which the loss function should be returned.
+
+        Returns
+        -------
+        bool
+            Bool indicating if the model works on CUDA or not.
+        """
         if self.is_pytorch(model_id):
             return self.model_settings_dict[model_id]["cuda_enabled"]
         else:
@@ -337,7 +404,22 @@ class ModelLoader:
     def split_off_val_dataset(
             edge_index: torch.Tensor,
             percentage: float
-    ):
+    ) -> typing.Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Function that splits of a certain percentage of the edges in order to create a validation set.
+
+        Parameters
+        ----------
+        edge_index : torch.Tensor
+            input edge index which should be split
+        percentage : float
+            percentage of the val set. Must be between zero and one.
+
+        Returns
+        -------
+        train_set, val_set : typing.Tuple[torch.Tensor, torch.Tensor]
+            trainset and valset that have been split
+        """
         # check if graph undirected or directed
         is_directed = True
         dir_edge_index = EdgeConvolutionBatcher.remove_undirected_duplicate_edge(edge_index)
