@@ -9,6 +9,22 @@ import typing
 def surpriselib_prediction_to_sklearn(
         predictions: typing.List[surprise.prediction_algorithms.predictions.Prediction]
 ) -> typing.Tuple[np.ndarray, np.ndarray]:
+    """
+    Function used to convert the prediction output of sklearn to true label and score which is needed for computing the
+    accuracy and ROC curve.
+
+    Parameters
+    ----------
+    predictions : typing.List[surprise.prediction_algorithms.predictions.Prediction]
+        predictions of surpriselib
+
+    Returns
+    -------
+    y_true : torch.Tensor
+        true labels of the edges
+    y_score: torch.Tensor
+        score of the edges
+    """
     # determine how many predictions we have and large the reserved arrays should be
     prediction_count = len(predictions)
     # initialize output parameters y_true and y_score
@@ -26,6 +42,22 @@ def calc_ROC_curve(
         save_as_file: bool = False,
         output_file_name: str = None
 ) -> None:
+    """
+    Calculate and plot or save the ROC curve for the predicitons which is given via the input parameters.
+
+    Parameters
+    ----------
+    predictions : typing.List[surprise.prediction_algorithms.predictions.Prediction]
+        predictions which were the output of the surpriselib recommender
+    save_as_file : bool
+        boolean determining if a file containing the plot should be saved or if the plot shall be shown.
+    output_file_name : str
+        if the save_as_file bool is set to True this specifies the path where the graph will be saved in.
+
+    Returns
+    -------
+    Nothing
+    """
     # transform data_related
     y_true, y_score = surpriselib_prediction_to_sklearn(predictions)
     # use sklearn to get fpr and tpr
