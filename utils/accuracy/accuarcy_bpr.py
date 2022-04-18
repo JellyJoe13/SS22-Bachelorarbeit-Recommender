@@ -14,19 +14,47 @@ Important note: Original content is heavily modified to fit the usage in this pr
 def compute_bpr_loss(
         pos_scores: torch.Tensor,
         neg_scores: torch.Tensor
-):
+) -> torch.Tensor:
+    """
+    Function computing the bpr loss given the pos and neg scores.
+
+    Parameters
+    ----------
+    pos_scores : torch.Tensor
+        positive scores meaning the logits not the probabilities
+    neg_scores : torch.Tensor
+        negative scores meaning the logits not the probabilities
+
+    Returns
+    -------
+    bpr_loss : torch.Tensor
+        Loss that was computed in the function. Used to train model.
+    """
     # create every combination of every pos score with every neg score
     combinations = torch.cat([pos_entry-neg_scores for pos_entry in pos_scores])
     # calculate the mean of these combinations
     bpr_loss = torch.mean(F.softplus(combinations))
-
+    # returns the computed loss
     return bpr_loss
 
 
 def adapter_brp_loss_GNN(
         link_logits: torch.Tensor,
         link_labels: torch.Tensor
-):
+) -> torch.Tensor:
+    """
+    Function used as a parameter for function compute_bpr_loss() in case the pos and neg schores were not computed yet.
+
+    Parameters
+    ----------
+    link_logits : Approximations of the Graph neural networks for the edges
+    link_labels : True label of the edges
+
+    Returns
+    -------
+    bpr_loss : torch.Tensor
+        bpr loss that was computed given the input tensors
+    """
     # separate pos and neg labels
     pos_scores = link_logits[link_labels == 1]
     neg_scores = link_logits[link_labels == 0]
