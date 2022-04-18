@@ -13,7 +13,7 @@ import rdkit
 from rdkit.Chem import Descriptors, MolFromSmiles
 import os
 from os.path import exists
-from x_data_transform import transform_and_scale_x_data
+from .x_data_transform import transform_and_scale_x_data
 
 
 def pandas_to_GNN_pyg_edges(df, cid_translation_dictionary: dict, aid_translation_dictionary: dict):
@@ -127,16 +127,20 @@ def smiles_and_rdkit_chem_param_generation(
     # simple check for the aid and cid count variable
     assert aid_count > 0
     assert cid_count > 0
+    # get path
+    path_top_dir = os.path.os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     # SEPARATING BETWEEN MODES missing
     if generate:
         # Modus where rdkit is used to generate the descriptors. any empty_GNN_x is ignored (currently)
         # Note: this is very time-consuming so that the pre-generated x is stored in a csv file in the data_related folder.
         # if the file exists we load it from there
-        if exists("../../data/descriptors_x_transformed2.csv"):
-            load_x = np.nan_to_num(np.loadtxt("data_related/descriptors_x_transformed2.csv", delimiter=","), nan=0)
+        load_path1 = os.path.join(path_top_dir, "data", "descriptors_x_transformed2.csv")
+        if exists(load_path1):
+            load_x = np.nan_to_num(np.loadtxt(load_path1, delimiter=","), nan=0)
             return torch.tensor(load_x, dtype=torch.float)
         # if the chemical descriptor file does not exist, generate and save it (as it takes 1h52 to compute it
-        if exists("../../data/descriptors_x.csv"):
+        load_path2 = os.path.join(path_top_dir, "data", "descriptors_x.csv")
+        if not exists(load_path2):
             # create x array
             x = np.zeros(shape=((aid_count + cid_count), len(Descriptors.descList)))
             # iterate over filtered and sorted table
@@ -154,14 +158,14 @@ def smiles_and_rdkit_chem_param_generation(
             # without generating NaN or Inf
             # values
             x = transform_and_scale_x_data(save_to_file=True,
-                                           saving_path="../../data/descriptors_x_transformed2.csv",
+                                           saving_path=load_path1,
                                            already_loaded_array=x)
             return torch.tensor(x, dtype=torch.float)
         else:
             # chemical descriptor csv exists but transformed version doesn't, so load it and save the generated array
             data = transform_and_scale_x_data(save_to_file=True,
-                                              saving_path="../../data/descriptors_x_transformed2.csv",
-                                              path="../../data/descriptors_x.csv")
+                                              saving_path=load_path1,
+                                              path=load_path2)
             # turn it into a torch tensor and return it
             return torch.tensor(data, dtype=torch.float)
     else:
@@ -178,7 +182,8 @@ def smiles_and_rdkit_chem_param_generation(
 def data_transform_split(
         data_mode: int,
         split_mode: int = 0,
-        path: str = "df_assay_entries.csv",
+        path: str = os.path.join(os.path.os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
+                                 "df_assay_entries.csv"),
         empty_GNN_x: int = 0
 ) -> typing.Union[typing.Tuple[surprise.Trainset, typing.List[tuple]], torch_geometric.data.Data]:
     """
