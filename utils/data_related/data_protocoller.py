@@ -1,4 +1,5 @@
 import json
+import typing
 
 import torch
 
@@ -38,13 +39,25 @@ class DataProtocoller:
     def register_precision_recall(
             self,
             epoch: int,
-            precision: float,
-            recall: float
+            precision: typing.Union[float, typing.Tuple[float, float]],
+            recall: typing.Union[float, typing.Tuple[float, float]]
     ) -> None:
         if epoch not in self.__epoch_dict[epoch]:
             self.__epoch_dict[epoch] = {}
-        self.__epoch_dict[epoch]["precision"] = precision
-        self.__epoch_dict[epoch]["recall"] = recall
+        if type(precision) == tuple:
+            self.__epoch_dict[epoch]["precision"] = {
+                "constant": precision[0],
+                "relative": precision[1]
+            }
+        else:
+            self.__epoch_dict[epoch]["precision"] = precision
+        if type(recall) == tuple:
+            self.__epoch_dict[epoch]["recall"] = {
+                "constant": recall[0],
+                "relative": recall[1]
+            }
+        else:
+            self.__epoch_dict[epoch]["recall"] = recall
         return
 
     def print_to_console(
