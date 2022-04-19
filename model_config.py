@@ -8,10 +8,6 @@ import typing
 import torch_geometric.data
 
 import utils.accuracy.accuarcy_bpr
-
-current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(current)
-sys.path.append(parent)
 from utils.data_related.edge_batch import EdgeConvolutionBatcher
 from utils.data_related.data_gen import data_transform_split
 from surprise import SVD

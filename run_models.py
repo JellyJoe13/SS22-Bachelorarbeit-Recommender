@@ -16,7 +16,7 @@ import run_tools
 import utils.data_related.data_protocoller
 import model_workspace
 from datetime import datetime
-from utils.model_config import ModelLoader
+from model_config import ModelLoader
 from utils.accuracy.stopping_control import EarlyStoppingControl
 from utils.accuracy import accuracy_surpriselib
 from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN
