@@ -149,6 +149,8 @@ def full_experimental_run(
         protocoller.register_precision_recall(-1, precision, recall)
         # save protocolled values to file in folder experiment_data
         protocoller.save_to_file("experiment_data")
+        # detach model
+        model.detach_()
         return
     else:
         # it is an surpriselib model

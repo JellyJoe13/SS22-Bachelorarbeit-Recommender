@@ -139,18 +139,20 @@ def test_model_advanced(
     """
     # poll first element from batcher stack
     current_batch, retranslation_dict = batcher.next_element()
-    # transfer data_related to device
-    current_batch = current_batch.to(device)
     # create empty lists to append the results to in the while loop
     batch_loop_storage = []
     edge_index_transformed = []
     # for all batch data_related objects in batcher do
     while current_batch:
+        # transfer data_related to device
+        current_batch = current_batch.to(device)
         # execute test model batch which gets the logits of the edges
         link_logits = test_model_batch(model, current_batch)
         # append labels and logits to storage list
         batch_loop_storage.append((current_batch.y,
                                    link_logits))
+        # detach current batch
+        current_batch.detach_()
         # poll next element
         current_batch, retranslation_dict = batcher.next_element()
         # write and transform edge information to new edge_index (in list form)
@@ -209,17 +211,18 @@ def test_model_basic(
     """
     # poll the next element from the batcher
     current_batch, _ = batcher.next_element()
-    # transfer data_related to device
-    current_batch = current_batch.to(device)
     # create an empty list to put into the testors of the batches
     logits_list = []
     # for all batch objects in the batcher do
     while current_batch:
+        # transfer data_related to device
+        current_batch = current_batch.to(device)
         # execute the test for the batches and append their logits and labels to the storage list
         logits_list.append((test_model_basic(model, current_batch), current_batch.y))
+        # detach current batch
+        current_batch.detach_()
         # poll the next element from the stack
         current_batch, _ = batcher.next_element()
-        # todo: should batch object be detached?
     # create the logits and label through concatenating the labels and logits from the batches
     logits = torch.cat([i[0] for i in logits_list])
     labels = torch.cat([i[1] for i in logits_list])
@@ -270,12 +273,12 @@ def train_model(
     loss_accumulate = 0
     # poll a batch data_related object from the stack
     current_batch, _ = batch_list.next_element()
-    # transfer data_related to device
-    current_batch = current_batch.to(device)
     # variable for summing up total edge count
     total_edge_count = 0
     # for all batch data_related objects stored in batcher do
     while current_batch:
+        # transfer data_related to device
+        current_batch = current_batch.to(device)
         # get the count of edges in the batch
         current_edge_count = current_batch.edge_index.size(1)
         # execute training for batch and sum loss up
@@ -283,6 +286,8 @@ def train_model(
                                              optimizer,
                                              current_batch,
                                              loss_function=loss_function).detach() * current_edge_count
+        # detach current batch
+        current_batch.detach_()
         # sum edge count up for total edge count
         total_edge_count += current_edge_count
         # poll next batch from batcher

@@ -12,6 +12,7 @@ class EdgeConvolutionBatcher:
     All edges will be exactly once be present in one batch data_related object, nodes may appear multiple times. Used for edge
     prediction or learning that uses Convolution layer.
     """
+
     def __init__(
             self,
             data: Data,
@@ -48,6 +49,16 @@ class EdgeConvolutionBatcher:
         self.batch_index = 0
         self.is_directed = is_directed
         self.mode_identifier = train_test_identifier
+        pos_count = self.original_data[self.mode_identifier + "_pos_edge_index"].size(1)
+        neg_count = self.original_data[self.mode_identifier + "_neg_edge_index"].size(1)
+        self.edges = torch.cat([self.original_data[self.mode_identifier + "_pos_edge_index"],
+                                self.original_data[self.mode_identifier + "_neg_edge_index"]],
+                               dim=-1)
+        self.target = torch.cat([torch.ones(pos_count, dtype=torch.float), torch.zeros(neg_count, dtype=torch.float)])
+        # sort edges
+        _, idx_sort = self.edges[0].sort(dim=-1)
+        self.edges = self.edges[:, idx_sort]
+        self.target = self.target[idx_sort]
 
     def reset_index(self) -> None:
         """
@@ -77,14 +88,7 @@ class EdgeConvolutionBatcher:
         torch.Tensor
             edge index which was input but without the edges but without duplicate edges
         """
-        # iterate over edges and swap so that one row contains the lower indices - lower diagonal part of
-        # adjacency matrix
-        edge_index_local = edge_index_local.transpose().clone()
-        for edge in edge_index_local:
-            if edge[0] > edge[1]:
-                edge[[0, 1]] = edge[[1, 0]]
-        # make them unique and return them
-        return edge_index_local.unique(dim=0).transpose()
+        return edge_index_local[:, edge_index_local[0] < edge_index_local[1]]
 
     def do_batch_split(
             self
@@ -104,13 +108,13 @@ class EdgeConvolutionBatcher:
         if self.is_directed:
             # DATA LOADING AND PREPARATION SECTION
             # concatenate edge index and write y labels accordingly
-            edge_index = torch.cat([self.original_data[self.mode_identifier+"_pos_edge_index"],
-                                    self.original_data[self.mode_identifier+"_neg_edge_index"]],
+            edge_index = torch.cat([self.original_data[self.mode_identifier + "_pos_edge_index"],
+                                    self.original_data[self.mode_identifier + "_neg_edge_index"]],
                                    dim=-1)
             y = torch.zeros(
                 edge_index.size(1),
                 dtype=torch.float)
-            y[:self.original_data[self.mode_identifier+"_pos_edge_index"]] = 1
+            y[:self.original_data[self.mode_identifier + "_pos_edge_index"]] = 1
             # sort edges
             idx_sort = edge_index[0].sort(dim=-1)
             edge_index = edge_index[:, idx_sort]
@@ -128,12 +132,14 @@ class EdgeConvolutionBatcher:
                 batch_list.append((selected_edge_index, selected_y))
         else:
             # create/transform pos section
-            edge_index = self.remove_undirected_duplicate_edge(self.original_data[self.mode_identifier+"_pos_edge_index"])
+            edge_index = self.remove_undirected_duplicate_edge(
+                self.original_data[self.mode_identifier + "_pos_edge_index"])
             # create/transform neg section
-            neg_edge_index = self.remove_undirected_duplicate_edge(self.original_data[self.mode_identifier+"_neg_edge_index"])
+            neg_edge_index = self.remove_undirected_duplicate_edge(
+                self.original_data[self.mode_identifier + "_neg_edge_index"])
             # create y
             y = torch.zeros(
-                edge_index.size(1)+neg_edge_index.size(1),
+                edge_index.size(1) + neg_edge_index.size(1),
                 dtype=torch.float)
             y[:edge_index.size(1)] = 1
             # fuze pos and neg edge index together
@@ -143,11 +149,11 @@ class EdgeConvolutionBatcher:
             edge_index = edge_index[:, idx_sort]
             y = y[:, idx_sort]
             # split edges (only half sample size as each edge exists 2 times in the returned data_related object
-            for i in range(0, edge_index.size(1), int(self.edge_sample_count/2)):
+            for i in range(0, edge_index.size(1), int(self.edge_sample_count / 2)):
                 # selected range of indexes
-                selected_edge_index = edge_index[:, i:(i+int(self.edge_sample_count/2))]
+                selected_edge_index = edge_index[:, i:(i + int(self.edge_sample_count / 2))]
                 # selected range of y
-                selected_y = y[i:(i+int(self.edge_sample_count/2))]
+                selected_y = y[i:(i + int(self.edge_sample_count / 2))]
                 # sampling done when retrieving batch
                 # append this batch of edges and labels to batch list
                 batch_list.append((selected_edge_index, selected_y))
@@ -156,7 +162,7 @@ class EdgeConvolutionBatcher:
 
     def neighbor_sampling(
             self,
-            node_list: typing.List[torch.Tensor]
+            node_list: torch.Tensor
     ) -> typing.Tuple[torch.Tensor, torch.Tensor]:
         """
         Function that executes neighbor sampling of positive edges of given nodes of the dataset.
@@ -167,40 +173,87 @@ class EdgeConvolutionBatcher:
 
         Parameters
         ----------
-        node_list : list(torch.Tensor)
+        node_list : torch.Tensor
             List of nodes from which the neighbor sampling step will be executed.
 
         Returns
         -------
-        edge_sample : torch.Tensor
+        edge_sample : typing.List[torch.Tensor]
             Tensor containing the sampled edges while convolution sampling of positive edges
         new_node_list : torch.Tensor
             Tensor containing the new list of nodes used after sampling
         """
         edge_sample = []
+        new_nodes = []
         # filter pos edge index after incident edges and choose a few random ones (parameter controlled)
         for node in node_list:
             # filter edges incident to this node
-            selected_edges = self.original_data[self.mode_identifier+"_pos_edge_index"][
-                0, self.original_data[self.mode_identifier+"_pos_edge_index"][0] == node]
-            # detach, transform to numpy and transpose
-            selected_edges = selected_edges.detach().numpy().transpose()
+            selected_edges = self.original_data[self.mode_identifier + "_pos_edge_index"][
+                1, self.original_data[self.mode_identifier + "_pos_edge_index"][0] == node]
             # randomize the samples
-            np.random.shuffle(selected_edges)
+            np.random.shuffle(selected_edges.detach().numpy())
             # choose the first self.edge_sample_count edges and put them into the list
-            edge_sample.append(selected_edges[:self.edge_sample_count])
-        # sampling complete, fuze the list together to a tensor
-        edge_sample = np.array(edge_sample)
-        # reshape it to make it a 2d array
-        edge_sample = np.reshape(edge_sample, (sum([i.shape[0] for i in edge_sample]), 2))
-        # convert it to a tensor
-        edge_sample = torch.tensor(edge_sample.transpose(), dtype=torch.long)
+            selected_edges = selected_edges[:self.convolution_neighbor_count]
+            # append to list
+            new_nodes.append(selected_edges)
+            # reshape selected_edges
+            selected_edges = selected_edges.reshape((selected_edges.size(0), 1))
+            # add edges to edge_list
+            selected_edges = torch.cat([selected_edges.new_full(selected_edges.size(), node),
+                                        selected_edges], dim=-1)
+            edge_sample.append(selected_edges.t())
         # compute a list of new nodes contained in the batch and make it unique
-        new_node_list = torch.cat([node_list, edge_sample[1]]).unique()
+        new_node_list = torch.cat(new_nodes).unique()
         # return both results
         return edge_sample, new_node_list
 
-    def next_element(self) -> typing.Tuple[torch_geometric.data.Data, dict]:
+    def next_element(self):
+        # get start and end position and check logic to stop
+        idx_start = self.edge_sample_count * self.batch_index
+        idx_end = self.edge_sample_count * (self.batch_index + 1)
+        if idx_end > self.edges.size(1):
+            idx_end = self.edges.size(1)
+        elif idx_start > self.edges.size(1):
+            return None
+        # get working set of y and edges
+        current_y = self.target[idx_start:idx_end]
+        current_e = self.edges[:, idx_start:idx_end].clone()
+        # get the unique node ids
+        node_ids = current_e.flatten().unique()
+        # storage for collected edges and nodes from neighborsampling
+        edge_collector = []
+        node_collector = []
+        # run neighborhood sampling
+        c = node_ids
+        for i in range(self.convolution_depth):
+            # execute one iteration of neighbor sampling
+            e, n = self.neighbor_sampling(c)
+            c = n
+            # append generated info to collectors
+            node_collector.append(n)
+            edge_collector += e
+        # fuze collectors
+        edge_collector = torch.cat(edge_collector, dim=-1)
+        node_collector = torch.cat(node_collector).unique()
+        # create translation dictionary
+        translation_dict = dict(zip(node_collector, np.arange(node_collector.size(0))))
+        # translate edges
+        for i in translation_dict:
+            value = translation_dict[i]
+            edge_collector[edge_collector == i] = value
+            current_e[current_e == i] = value
+        # create data object
+        data = Data(x=self.original_data.x[node_collector],
+                    edge_index=current_e,
+                    pos_edge_index=edge_collector,
+                    y=current_y)
+        # create reverse dict
+        reverse_dict = dict(zip(translation_dict.values(), translation_dict.keys()))
+        # increase batch index
+        self.batch_index += 1
+        return data, reverse_dict
+
+    def next_element_deprecated(self) -> typing.Tuple[torch_geometric.data.Data, dict]:
         """
         Function used for iterating through the split dataset. Computes random neighbor sampling while loading batch
         data_related object.
@@ -210,13 +263,13 @@ class EdgeConvolutionBatcher:
         data_related : torch_geometric.data.Data
             Data object containing the batched fragment of the original input data_related
         """
+        # if the batch split has not been yet calulated, calculate it
+        if not self.batch_list:
+            self.do_batch_split()
         # check if we are still in range of the batch_list
         if not self.batch_index < len(self.batch_list):
             # we are out of boundaries, return None
             return None
-        # if the batch split has not been yet calulated, calculate it
-        if not self.batch_list:
-            self.do_batch_split()
         # we are in range of batch_list
         current_edges = self.batch_list[self.batch_index][0]
         current_y = self.batch_list[self.batch_index][1]

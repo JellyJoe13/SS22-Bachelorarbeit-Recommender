@@ -173,7 +173,7 @@ class ModelLoader:
             },
             # new models
             # - pytorch homogen minibatch GATConv-1 binaryloss
-            14: {
+            15: {
                 "model": 4,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -187,7 +187,7 @@ class ModelLoader:
                 "sampling_info": 0
             },
             # - pytorch homogen minibatch GATConv-0 binaryloss
-            14: {
+            16: {
                 "model": 4,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -201,7 +201,7 @@ class ModelLoader:
                 "sampling_info": 1
             },
             # - pytorch homogen minibatch SAGEConv-1 binaryloss
-            14: {
+            17: {
                 "model": 5,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -215,7 +215,7 @@ class ModelLoader:
                 "sampling_info": 0
             },
             # - pytorch homogen minibatch SAGEConv-0 binaryloss
-            14: {
+            18: {
                 "model": 5,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -230,7 +230,7 @@ class ModelLoader:
             },
             # TWENTY SECTION - MINIBATCH-NODATA
             # - pytorch homogen minibatch GCNConv-0 binaryloss
-            10: {
+            20: {
                 "model": 1,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -371,25 +371,25 @@ class ModelLoader:
             if model == GNN_homogen_chemData_GCN:
                 return model(num_features_input=dict_entry["num_features_input"],
                              num_features_hidden=dict_entry["num_features_hidden"],
-                             num_features_out=dict_entry["num_features_out"])
+                             num_features_out=dict_entry["num_features_output"])
             elif model == GNN_GCNConv_homogen:
                 return model(num_features_input=dict_entry["num_features_input"],
                              num_features_hidden=dict_entry["num_features_hidden"],
-                             num_features_out=dict_entry["num_features_out"])
+                             num_features_out=dict_entry["num_features_output"])
             elif model == GNN_GCNConv_homogen_basic:
                 return model(num_features_input=dict_entry["num_features_input"],
-                             num_features_out=dict_entry["num_features_out"])
+                             num_features_out=dict_entry["num_features_output"])
             elif model == GNN_LGConv_homogen_variable:
                 return model(input_x_features=dict_entry["num_features_input"],
                              number_convolutions=dict_entry["number_convolutions"])
             elif model == GNN_GATConv_homogen:
                 return model(num_features_input=dict_entry["num_features_input"],
                              num_features_hidden=dict_entry["num_features_hidden"],
-                             num_features_out=dict_entry["num_features_out"])
+                             num_features_out=dict_entry["num_features_output"])
             elif model == GNN_SAGEConv_homogen:
                 return model(num_features_input=dict_entry["num_features_input"],
                              num_features_hidden=dict_entry["num_features_hidden"],
-                             num_features_out=dict_entry["num_features_out"])
+                             num_features_out=dict_entry["num_features_output"])
             else:
                 return None
         else:
@@ -428,8 +428,8 @@ class ModelLoader:
         index = np.arange(edge_index.size(1))
         np.random.shuffle(index)
         choosing_border = int(percentage * edge_index.size(1))
-        train_set = edge_index[:, index[:choosing_border]]
-        val_set = edge_index[:, index[choosing_border:]]
+        train_set = edge_index[:, index[choosing_border:]]
+        val_set = edge_index[:, index[:choosing_border]]
         if is_directed:
             train_set = torch.cat([train_set, train_set[[1, 0]]], dim=-1)
             val_set = torch.cat([val_set, val_set[[1, 0]]], dim=-1)
@@ -476,9 +476,11 @@ class ModelLoader:
         # differ if model to load is pytorch or not
         if self.is_pytorch(model_id):
             # load the data_related from storage and with datamode and splitmode
+            print("data fetching")
             data, id_breakpoint = data_transform_split(data_mode=self.model_settings_dict[model_id]["data_mode"],
                                                        split_mode=split_mode)
             # processing of train data_related if we should generate a val dataset
+            print("val splitting if enabled")
             if do_val_split:
                 # take 1% of edges from trainset and transfer it to valset. Do for pos and neg edges likewise
                 # do it for positive edges:
@@ -490,6 +492,7 @@ class ModelLoader:
                     data.train_neg_edge_index,
                     percentage=0.01)
             # determine if we work with minibatching or fullbatching
+            print("do batching things")
             if self.is_batched(model_id):
                 # fetch parameters for neighbor sampling
                 sampling_info = self.convolution_info[self.model_settings_dict[model_id]["sampling_info"]]
