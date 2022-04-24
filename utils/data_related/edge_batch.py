@@ -1,3 +1,5 @@
+import math
+
 import torch_geometric.data
 from torch_geometric.data import Data
 import torch
@@ -222,7 +224,7 @@ class EdgeConvolutionBatcher:
         node_ids = current_e.flatten().unique()
         # storage for collected edges and nodes from neighborsampling
         edge_collector = []
-        node_collector = []
+        node_collector = [node_ids]
         # run neighborhood sampling
         c = node_ids
         for i in range(self.convolution_depth):
@@ -333,3 +335,107 @@ class EdgeConvolutionBatcher:
         self.batch_index = previous_index
         # return computed batch data_related object
         return data
+
+
+class EdgeBatcher:
+    def __init__(
+            self,
+            data: torch_geometric.data.Data,
+            num_selection_edges: int = 10000,
+            mode: str = "train"
+    ):
+        """
+        Initialize EdgeBatcher.
+
+        Parameters
+        ----------
+        data : torch_geometric.data.Data
+            original data on which the splitting operation is to be performed
+        num_selection_edges : int
+            number of edges that will be in the subset data object which will be predicted
+        mode : str
+            determines if the split shall be done on the trainset, testset or validation set
+        """
+        # set parameters of class
+        self.original_data = data
+        self.mode_identifier = mode
+        self.num_selection_edges = num_selection_edges
+        # get count of positive and negative edges
+        pos_count = self.original_data[self.mode_identifier + "_pos_edge_index"].size(1)
+        neg_count = self.original_data[self.mode_identifier + "_neg_edge_index"].size(1)
+        # create subset basic information
+        self.edges = torch.cat([self.original_data[self.mode_identifier + "_pos_edge_index"],
+                                self.original_data[self.mode_identifier + "_neg_edge_index"]],
+                               dim=-1)
+        self.target = torch.cat([torch.ones(pos_count, dtype=torch.float), torch.zeros(neg_count, dtype=torch.float)])
+        # create randomize index
+        index = np.arange(pos_count+neg_count)
+        np.random.shuffle(index)
+        # randomize edges with index
+        self.edges = self.edges[:, index]
+        self.target = self.target[:, index]
+        # calculate number of subsets
+        self.len = math.ceil((pos_count + neg_count) / num_selection_edges)
+
+    def __len__(self) -> int:
+        """
+        Return the number of all subsets/batch objects.
+
+        Returns
+        -------
+        int
+            number of subsets
+        """
+        return self.len
+
+    def __call__(
+            self,
+            i: int
+    ) -> torch_geometric.data.Data:
+        """
+        Get the i-th subset of the batcher.
+
+        Parameters
+        ----------
+        i : int
+            specifies index of batch data object to fetch and construct a subset data object for.
+
+        Returns
+        -------
+        batch_data : torch_geometric.data.Data
+            batch data object which is a subset of the original data set
+        """
+        # ensure proper range for i
+        if i < 0:
+            return None
+        elif i >= self.len:
+            return None
+        # determine start and end
+        idx_start = self.num_selection_edges * i
+        idx_end = self.num_selection_edges * (i + 1)
+        if idx_end > self.edges.size(1):
+            idx_end = self.edges.size(1)
+        # return selected subset
+        data = torch_geometric.data.Data(
+            x=self.original_data.x,
+            pos_edge_index=self.original_data[self.mode_identifier + "_pos_edge_index"],
+            edge_index=self.edges[:, idx_start:idx_end],
+            y=self.target[idx_start:idx_end]
+        )
+        return data
+
+    def randomize(self) -> None:
+        """
+        Randomize subsets.
+
+        Returns
+        -------
+        Nothing.
+        """
+        # create randomize index
+        index = np.arange(self.edges.size(1))
+        np.random.shuffle(index)
+        # randomize edges with index
+        self.edges = self.edges[:, index]
+        self.target = self.target[:, index]
+        return
