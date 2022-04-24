@@ -307,7 +307,7 @@ class EdgeConvolutionBatcher:
         reverse_dict = {v: k for k, v in translation_dict}
         return data, reverse_dict
 
-    def get_element(
+    def __call__(
             self,
             index: int
     ) -> torch_geometric.data.Data:

@@ -6,7 +6,7 @@ from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_va
 from model_workspace.GNN_minibatch_homogen_SAGEConv import GNN_SAGEConv_homogen
 from utils.accuracy import accuracy_recommender
 from utils.data_related import edge_batch
-import sklearn.metrics
+from sklearn.metrics import roc_auc_score
 import torch
 import torch_geometric.data
 import torch.nn.functional as F
@@ -54,10 +54,8 @@ def train_model_batch(
     optimizer.zero_grad()
     # fit and predict the edges using the edge_index
     link_logits = model.fit_predict(data.x, data.edge_index, data.pos_edge_index)
-    # get true predictions in form of a torch Tensor for loss computation
-    link_labels = data.y
     # calculate loss
-    loss = loss_function(link_logits, link_labels)
+    loss = loss_function(link_logits, data.y)
     # backward optimize loss
     loss.backward()
     # make a step with the optimizer
@@ -108,12 +106,13 @@ def test_model_advanced(
                             GNN_GCNConv_homogen_basic,
                             GNN_LGConv_homogen_variable,
                             GNN_SAGEConv_homogen],
-        batcher: edge_batch.EdgeConvolutionBatcher,
+        batcher: edge_batch.EdgeBatcher,
         model_id: int,
         device,
         epoch: int = 0,
         split_mode: int = 0
-) -> typing.Tuple[float, float]:
+) -> typing.Union[typing.Tuple[float, float],
+                  typing.Tuple[typing.Tuple[float, float], typing.Tuple[float, float]]]:
     """
     Execute full test creating a roc curve diagram and calculating the accuracy scores.
 
@@ -134,48 +133,35 @@ def test_model_advanced(
 
     Returns
     -------
-    precision, recall : tuple(float, float)
+    precision, recall : typing.Union[typing.Tuple[float, float],
+    typing.Tuple[typing.Tuple[float, float], typing.Tuple[float, float]]]
         precision and recall score of the whole test procedure spanning all batches
     """
-    # poll first element from batcher stack
-    current_batch, retranslation_dict = batcher.next_element()
-    # create empty lists to append the results to in the while loop
-    batch_loop_storage = []
-    edge_index_transformed = []
-    # for all batch data_related objects in batcher do
-    while current_batch:
-        # transfer data_related to device
-        current_batch = current_batch.to(device)
+    logits_collector = []
+    for i in range(len(batcher)):
+        # load subdata object
+        current_batch = batcher(i).to(device)
         # execute test model batch which gets the logits of the edges
         link_logits = test_model_batch(model, current_batch)
         # append labels and logits to storage list
-        batch_loop_storage.append((current_batch.y,
-                                   link_logits))
+        logits_collector.append(link_logits)
         # detach current batch
-        current_batch.detach_()
-        # poll next element
-        current_batch, retranslation_dict = batcher.next_element()
-        # write and transform edge information to new edge_index (in list form)
-        for edge in current_batch.edge_index.T:
-            edge_index_transformed.append([retranslation_dict[edge[0]], retranslation_dict[edge[1]]])
-    # fuze batch results
-    link_logits = torch.cat([i[0] for i in batch_loop_storage])
-    link_labels = torch.cat([i[1] for i in batch_loop_storage])
-    edge_index_transformed = torch.tensor(edge_index_transformed, dtype=torch.long).T
+        current_batch.detach()
     # create name for roc curve plot
     file_name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \
                 + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    # fuze logits
+    logits_collector = torch.cat(logits_collector)
     # create roc plot
-    accuracy_recommender.calc_ROC_curve(link_labels,
-                                        link_logits,
+    accuracy_recommender.calc_ROC_curve(current_batch.y,
+                                        logits_collector,
                                         save_as_file=True,
                                         output_file_name=file_name)
     # calculate accuracy
-    precision, recall = accuracy_recommender.accuracy_precision_recall(edge_index_transformed,
-                                                                       link_labels,
-                                                                       link_logits)
-    # reset index of batcher
-    batcher.reset_index()
+    precision, recall = accuracy_recommender.accuracy_precision_recall(batcher.edges,
+                                                                       batcher.target,
+                                                                       logits_collector,
+                                                                       "both")
     return precision, recall
 
 
@@ -200,7 +186,7 @@ def test_model_basic(
                          GNN_LGConv_homogen_variable,
                          GNN_SAGEConv_homogen]
         model of the graph neural network
-    batcher : edge_batch.EdgeConvolutionBatcher
+    batcher : edge_batch.EdgeBatcher
         batcher that provides batch data_related objects to process
     device : torch.Device
         device to run the algorithm on
@@ -209,27 +195,22 @@ def test_model_basic(
     -------
     roc auc score of the tested edges
     """
-    # poll the next element from the batcher
-    current_batch, _ = batcher.next_element()
-    # create an empty list to put into the testors of the batches
-    logits_list = []
-    # for all batch objects in the batcher do
-    while current_batch:
-        # transfer data_related to device
-        current_batch = current_batch.to(device)
-        # execute the test for the batches and append their logits and labels to the storage list
-        logits_list.append((test_model_basic(model, current_batch), current_batch.y))
-        # detach current batch
-        current_batch.detach_()
-        # poll the next element from the stack
-        current_batch, _ = batcher.next_element()
-    # create the logits and label through concatenating the labels and logits from the batches
-    logits = torch.cat([i[0] for i in logits_list])
-    labels = torch.cat([i[1] for i in logits_list])
-    # reset batcher index
-    batcher.reset_index()
-    # calculate roc auc score and return it
-    return sklearn.metrics.roc_curve(labels.cpu(), logits.sigmoid().cpu())
+    # storage for logits
+    logits_collector = []
+    # iterate over batch objects
+    for i in range(len(batcher)):
+        # get the batch data object
+        current_batch = batcher(i).to(device)
+        # get logits
+        logits = test_model_batch(model, current_batch)
+        # put logits in collector
+        logits_collector.append(logits)
+        # detach data
+        current_batch.detach()
+    # fuze logits
+    logits_collector = torch.cat(logits_collector)
+    # return roc
+    return roc_auc_score(batcher.target.cpu(), logits_collector.sigmoid().cpu())
 
 
 def train_model(
@@ -238,11 +219,11 @@ def train_model(
                             GNN_GCNConv_homogen_basic,
                             GNN_LGConv_homogen_variable,
                             GNN_SAGEConv_homogen],
-        batch_list: edge_batch.EdgeConvolutionBatcher,
+        batch_list: edge_batch.EdgeBatcher,
         optimizer,
         device,
         loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
-):
+) -> torch.Tensor:
     """
     Execute the training for one epoch. Returns the averaged loss.
 
@@ -259,7 +240,7 @@ def train_model(
                          GNN_LGConv_homogen_variable,
                          GNN_SAGEConv_homogen]
         model to train
-    batch_list : edge_batch.EdgeConvolutionBatcher
+    batch_list : edge_batch.EdgeBatcher
         batcher from which to fetch the batch data_related objects
     optimizer
         Optimizer to use for training the model
@@ -271,32 +252,16 @@ def train_model(
     """
     # define accumulate variable for summing up loss from batches
     loss_accumulate = 0
-    # poll a batch data_related object from the stack
-    current_batch, _ = batch_list.next_element()
-    # variable for summing up total edge count
-    total_edge_count = 0
     # for all batch data_related objects stored in batcher do
-    counter = 0
-    while current_batch:
-        if counter % 10 == 0:
-            print(counter)
-        counter += 1
-        # transfer data_related to device
-        current_batch = current_batch.to(device)
-        # get the count of edges in the batch
-        current_edge_count = current_batch.edge_index.size(1)
-        # execute training for batch and sum loss up
+    for i in range(len(batch_list)):
+        # fetch batch data object
+        current_batch = batch_list(i).to(device)
+        # calculate loss and add it to total loss
         loss_accumulate += train_model_batch(model,
                                              optimizer,
                                              current_batch,
-                                             loss_function=loss_function).detach() * current_edge_count
-        # detach current batch
+                                             loss_function).detach() * current_batch.edge_index.size(1)
+        # detach batch data object from device
         current_batch.detach()
-        # sum edge count up for total edge count
-        total_edge_count += current_edge_count
-        # poll next batch from batcher
-        current_batch, _ = batch_list.next_element()
-    # reset index
-    batch_list.reset_index()
-    # accumulate losses
-    return loss_accumulate / total_edge_count
+    # calculate the average loss and return it
+    return loss_accumulate / batch_list.edges.size(1)

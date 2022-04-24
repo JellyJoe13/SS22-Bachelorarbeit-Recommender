@@ -150,7 +150,7 @@ def full_experimental_run(
         # save protocolled values to file in folder experiment_data
         protocoller.save_to_file("experiment_data")
         # detach model
-        model.detach_()
+        model.detach()
         return
     else:
         # it is an surpriselib model

@@ -8,7 +8,7 @@ import typing
 import torch_geometric.data
 
 import utils.accuracy.accuarcy_bpr
-from utils.data_related.edge_batch import EdgeConvolutionBatcher
+from utils.data_related.edge_batch import EdgeConvolutionBatcher, EdgeBatcher
 from utils.data_related.data_gen import data_transform_split
 from surprise import SVD
 from torch.nn import functional as F
@@ -440,7 +440,7 @@ class ModelLoader:
             model_id: int,
             do_val_split: bool = False,
             split_mode: int = 0
-    ) -> typing.Union[typing.Dict[int, EdgeConvolutionBatcher],
+    ) -> typing.Union[typing.Dict[int, EdgeBatcher],
                       torch_geometric.data.Data,
                       typing.Tuple[surprise.trainset.Trainset, list]]:
         """
@@ -500,25 +500,25 @@ class ModelLoader:
                 convolution_depth = sampling_info["depth"]
                 convolution_neighbor_count = sampling_info["neighbor_count"]
                 # create the batcher for the test edges
-                test_batcher = EdgeConvolutionBatcher(data, edge_sample_count=edge_sample_count,
-                                                      convolution_depth=convolution_depth,
-                                                      convolution_neighbor_count=convolution_neighbor_count,
-                                                      is_directed=False,
-                                                      train_test_identifier="test")
+                test_batcher = EdgeBatcher(data, edge_sample_count=edge_sample_count,
+                                           convolution_depth=convolution_depth,
+                                           convolution_neighbor_count=convolution_neighbor_count,
+                                           is_directed=False,
+                                           train_test_identifier="test")
                 # create a batcher for the train edges
-                train_batcher = EdgeConvolutionBatcher(data, edge_sample_count=edge_sample_count,
-                                                       convolution_depth=convolution_depth,
-                                                       convolution_neighbor_count=convolution_neighbor_count,
-                                                       is_directed=False,
-                                                       train_test_identifier="train")
+                train_batcher = EdgeBatcher(data, edge_sample_count=edge_sample_count,
+                                            convolution_depth=convolution_depth,
+                                            convolution_neighbor_count=convolution_neighbor_count,
+                                            is_directed=False,
+                                            train_test_identifier="train")
                 # create a batcher for val edges if it is desired
                 val_batcher = None
                 if do_val_split:
-                    val_batcher = EdgeConvolutionBatcher(data, edge_sample_count=edge_sample_count,
-                                                         convolution_depth=convolution_depth,
-                                                         convolution_neighbor_count=convolution_neighbor_count,
-                                                         is_directed=False,
-                                                         train_test_identifier="val")
+                    val_batcher = EdgeBatcher(data, edge_sample_count=edge_sample_count,
+                                              convolution_depth=convolution_depth,
+                                              convolution_neighbor_count=convolution_neighbor_count,
+                                              is_directed=False,
+                                              train_test_identifier="val")
                 # return the three batchers using a dict to not confuse the batchers with each other.
                 return {
                     "train": train_batcher,
