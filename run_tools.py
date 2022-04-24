@@ -276,7 +276,11 @@ def train_model(
     # variable for summing up total edge count
     total_edge_count = 0
     # for all batch data_related objects stored in batcher do
+    counter = 0
     while current_batch:
+        if counter % 10 == 0:
+            print(counter)
+        counter += 1
         # transfer data_related to device
         current_batch = current_batch.to(device)
         # get the count of edges in the batch
@@ -287,7 +291,7 @@ def train_model(
                                              current_batch,
                                              loss_function=loss_function).detach() * current_edge_count
         # detach current batch
-        current_batch.detach_()
+        current_batch.detach()
         # sum edge count up for total edge count
         total_edge_count += current_edge_count
         # poll next batch from batcher

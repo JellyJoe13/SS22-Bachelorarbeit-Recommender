@@ -112,7 +112,7 @@ def full_experimental_run(
         # initialize data_related protocoller
         name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_" \
                + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        protocoller = utils.data.data_protocoller.DataProtocoller(name, loss_name)
+        protocoller = utils.data_related.data_protocoller.DataProtocoller(name, loss_name)
         # initialize early stopping controller
         esc = EarlyStoppingControl()
         # run epochs
