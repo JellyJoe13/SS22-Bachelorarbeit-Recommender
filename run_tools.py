@@ -1,4 +1,5 @@
 import typing
+from tqdm.auto import tqdm
 
 from model_workspace.GNN_minibatch_homogen_GATConv import GNN_GATConv_homogen
 from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homogen_basic
@@ -253,7 +254,7 @@ def train_model(
     # define accumulate variable for summing up loss from batches
     loss_accumulate = 0
     # for all batch data_related objects stored in batcher do
-    for i in range(len(batch_list)):
+    for i in tqdm(range(len(batch_list))):
         # fetch batch data object
         current_batch = batch_list(i).to(device)
         # calculate loss and add it to total loss

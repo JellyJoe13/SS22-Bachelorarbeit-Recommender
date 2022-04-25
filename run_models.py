@@ -45,7 +45,7 @@ def run_epoch(
         assert type(data_object) == dict
         train_batcher = data_object["train"]
         test_batcher = data_object["test"]
-        loss = run_tools.train_model(model, train_batcher, optimizer, loss_function=loss_function)
+        loss = run_tools.train_model(model, train_batcher, optimizer, device, loss_function=loss_function)
         roc_auc = run_tools.test_model_basic(model, test_batcher, device)
     else:
         assert type(data_object) == torch_geometric.data.Data
@@ -117,6 +117,9 @@ def full_experimental_run(
         esc = EarlyStoppingControl()
         # run epochs
         for epoch in range(max_epochs):
+            # initialize test boolean
+            do_full_test = False
+            # whatever
             loss, roc_auc = run_epoch(model, optimizer, data_object, model_id, device, model_loader, loss_function)
             protocoller.register_loss(epoch, loss)
             protocoller.register_roc_auc(epoch, roc_auc)
@@ -135,8 +138,8 @@ def full_experimental_run(
                 # print Information to command line
                 print(" - val ROC AUC:", float(val_roc_auc))
                 if esc.get_should_stop():
-                    break
-            if epoch % 5 == 0:
+                    do_full_test = True
+            if (epoch % 5 == 0) or do_full_test:
                 precision, recall = full_test_run(model, data_object["test"], model_id, epoch, split_mode, device,
                                                   model_loader)
                 protocoller.register_precision_recall(epoch, precision, recall)

@@ -41,18 +41,6 @@ class ModelLoader:
             "binary": F.binary_cross_entropy_with_logits,
             "bpr": utils.accuracy.accuarcy_bpr.adapter_brp_loss_GNN
         }
-        self.convolution_info = {
-            0: {
-                "sample_count": 100,
-                "depth": 2,
-                "neighbor_count": 100
-            },
-            1: {
-                "sample_count": 100,
-                "depth": 1,
-                "neighbor_count": 100
-            }
-        }
         self.model_settings_dict = {
             # surpriselib model with baseline recommender
             -1: {
@@ -115,8 +103,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary",
-                "sampling_info": 0
+                "loss": "binary"
             },
             # - pytorch homogen minibatch GCNConv-0 bprloss
             11: {
@@ -129,8 +116,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "bpr",
-                "sampling_info": 0
+                "loss": "bpr"
             },
             # - pytorch homogen minibatch GCNConv-1 binaryloss
             12: {
@@ -142,8 +128,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary",
-                "sampling_info": 1
+                "loss": "binary"
             },
             # - pytorch homogen minibatch LGConv-1 binaryloss
             13: {
@@ -155,8 +140,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary",
-                "sampling_info": 1
+                "loss": "binary"
             },
             # - pytorch homogen minibatch LGConv-2 binaryloss
             14: {
@@ -168,8 +152,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary",
-                "sampling_info": 0
+                "loss": "binary"
             },
             # new models
             # - pytorch homogen minibatch GATConv-1 binaryloss
@@ -183,8 +166,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary",
-                "sampling_info": 0
+                "loss": "binary"
             },
             # - pytorch homogen minibatch GATConv-0 binaryloss
             16: {
@@ -197,8 +179,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary",
-                "sampling_info": 1
+                "loss": "binary"
             },
             # - pytorch homogen minibatch SAGEConv-1 binaryloss
             17: {
@@ -211,8 +192,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary",
-                "sampling_info": 0
+                "loss": "binary"
             },
             # - pytorch homogen minibatch SAGEConv-0 binaryloss
             18: {
@@ -225,8 +205,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary",
-                "sampling_info": 0
+                "loss": "binary"
             },
             # TWENTY SECTION - MINIBATCH-NODATA
             # - pytorch homogen minibatch GCNConv-0 binaryloss
@@ -240,8 +219,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary",
-                "sampling_info": 0
+                "loss": "binary"
             },
         }
 
@@ -439,7 +417,8 @@ class ModelLoader:
             self,
             model_id: int,
             do_val_split: bool = False,
-            split_mode: int = 0
+            split_mode: int = 0,
+            num_selection_edges_batching: int = 100000
     ) -> typing.Union[typing.Dict[int, EdgeBatcher],
                       torch_geometric.data.Data,
                       typing.Tuple[surprise.trainset.Trainset, list]]:
@@ -449,6 +428,8 @@ class ModelLoader:
 
         Parameters
         ----------
+        num_selection_edges_batching : int
+            Number of edges in each batch object
         model_id : int
             defines which model to use and create batches for loaded data_related
         do_val_split : bool
@@ -494,31 +475,20 @@ class ModelLoader:
             # determine if we work with minibatching or fullbatching
             print("do batching things")
             if self.is_batched(model_id):
-                # fetch parameters for neighbor sampling
-                sampling_info = self.convolution_info[self.model_settings_dict[model_id]["sampling_info"]]
-                edge_sample_count = sampling_info["sample_count"]
-                convolution_depth = sampling_info["depth"]
-                convolution_neighbor_count = sampling_info["neighbor_count"]
                 # create the batcher for the test edges
-                test_batcher = EdgeBatcher(data, edge_sample_count=edge_sample_count,
-                                           convolution_depth=convolution_depth,
-                                           convolution_neighbor_count=convolution_neighbor_count,
-                                           is_directed=False,
-                                           train_test_identifier="test")
+                test_batcher = EdgeBatcher(data,
+                                           num_selection_edges=num_selection_edges_batching,
+                                           mode="test")
                 # create a batcher for the train edges
-                train_batcher = EdgeBatcher(data, edge_sample_count=edge_sample_count,
-                                            convolution_depth=convolution_depth,
-                                            convolution_neighbor_count=convolution_neighbor_count,
-                                            is_directed=False,
-                                            train_test_identifier="train")
+                train_batcher = EdgeBatcher(data,
+                                            num_selection_edges=num_selection_edges_batching,
+                                            mode="train")
                 # create a batcher for val edges if it is desired
                 val_batcher = None
                 if do_val_split:
-                    val_batcher = EdgeBatcher(data, edge_sample_count=edge_sample_count,
-                                              convolution_depth=convolution_depth,
-                                              convolution_neighbor_count=convolution_neighbor_count,
-                                              is_directed=False,
-                                              train_test_identifier="val")
+                    val_batcher = EdgeBatcher(data,
+                                              num_selection_edges=num_selection_edges_batching,
+                                              mode="val")
                 # return the three batchers using a dict to not confuse the batchers with each other.
                 return {
                     "train": train_batcher,
