@@ -66,7 +66,7 @@ def full_test_run(
                      GNN_GCNConv_homogen_basic,
                      GNN_LGConv_homogen_variable,
                      GNN_SAGEConv_homogen],
-        data_object: Union[edge_batch.EdgeConvolutionBatcher, torch_geometric.data.Data],
+        data_object: Union[edge_batch.EdgeBatcher, torch_geometric.data.Data],
         model_id: int,
         epoch: int,
         split_mode: int,
@@ -75,7 +75,7 @@ def full_test_run(
 ):
     # determine if this is a fullbatch or minibatch model
     if model_loader.is_batched():
-        assert type(data_object) == edge_batch.EdgeConvolutionBatcher
+        assert type(data_object) == edge_batch.EdgeBatcher
         precision, recall = run_tools.test_model_advanced(model, data_object, model_id, device, epoch=epoch,
                                                           split_mode=split_mode)
     else:

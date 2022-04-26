@@ -139,7 +139,7 @@ def test_model_advanced(
         precision and recall score of the whole test procedure spanning all batches
     """
     logits_collector = []
-    for i in range(len(batcher)):
+    for i in tqdm(range(len(batcher))):
         # load subdata object
         current_batch = batcher(i).to(device)
         # execute test model batch which gets the logits of the edges
@@ -149,12 +149,12 @@ def test_model_advanced(
         # detach current batch
         current_batch.detach()
     # create name for roc curve plot
-    file_name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \
+    file_name = "Split-" + str(split_mode) + "_" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \
                 + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     # fuze logits
     logits_collector = torch.cat(logits_collector)
     # create roc plot
-    accuracy_recommender.calc_ROC_curve(current_batch.y,
+    accuracy_recommender.calc_ROC_curve(batcher.target,
                                         logits_collector,
                                         save_as_file=True,
                                         output_file_name=file_name)
@@ -199,7 +199,7 @@ def test_model_basic(
     # storage for logits
     logits_collector = []
     # iterate over batch objects
-    for i in range(len(batcher)):
+    for i in tqdm(range(len(batcher))):
         # get the batch data object
         current_batch = batcher(i).to(device)
         # get logits

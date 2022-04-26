@@ -15,14 +15,17 @@ class GNN_GCNConv_homogen(torch.nn.Module):
             self,
             num_features_input: int,
             num_features_hidden: int,
-            num_features_out: int
+            num_features_out: int,
+            use_bilinear: bool = False
     ):
         super(GNN_GCNConv_homogen, self).__init__()
         self.init_linear = Linear(num_features_input, num_features_input)
         self.conv1 = GCNConv(num_features_input, num_features_hidden)
         self.conv2 = GCNConv(num_features_hidden, num_features_out)
-        self.bilinear = Bilinear(num_features_out, num_features_out, 1)
-        self.endflatten = Flatten(0, -1)
+        self.use_bilinear = use_bilinear
+        if use_bilinear:
+            self.bilinear = Bilinear(num_features_out, num_features_out, 1)
+            self.endflatten = Flatten(0, -1)
 
     def fit_predict(
             self,
@@ -57,10 +60,14 @@ class GNN_GCNConv_homogen(torch.nn.Module):
         x = x.relu()
         # second convolution layer - depth two
         x = self.conv2(x, pos_edge_index_input)
-        # interpreting section, similar to vector product but with weighting and possible bias. learnable parameters
-        x = self.bilinear(x[edge_index_input[0]], x[edge_index_input[1]])
-        # return the logits
-        return self.endflatten(x)
+        if self.use_bilinear:
+            # interpreting section, similar to vector product but with weighting and possible bias. learnable parameters
+            x = self.bilinear(x[edge_index_input[0]], x[edge_index_input[1]])
+            # return the logits
+            return self.endflatten(x)
+        else:
+            # use vector product instead
+            return (x[edge_index_input[0]] * x[edge_index_input[1]]).sum(dim=-1)
 
     @staticmethod
     def get_name() -> str:

@@ -68,7 +68,7 @@ def calc_ROC_curve(
     '''
     Following code inspired/partly copied from https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#sphx-glr-auto-examples-model-selection-plot-roc-py
     '''
-    plt.figure()
+    fig = plt.figure()
     plt.plot(fpr, tpr, color="darkorange", label="ROC curve (ROC AUC=%0.2f)" % roc_auc)
     plt.plot([0, 1], [0, 1], color="blue", linestyle="--")
     plt.xlim([-0.05, 1.0])
@@ -78,7 +78,7 @@ def calc_ROC_curve(
     plt.title("ROC CURVE")
     plt.legend(loc="lower right")
     if save_as_file:
-        plt.savefig("plots/" + output_file_name + ".svg")
+        fig.savefig(output_file_name + ".svg")
     else:
         plt.show()
     return
@@ -119,6 +119,7 @@ def accuracy_precision_recall(
     # set modes
     mode_constant = mode == "constant"
     mode_relative = mode == "relative"
+    mode_constant = mode_relative = mode == "both"
     # determine the k for the top k entries
     k_r = int(y_true.shape[0] / 100)
     k_c = 100
