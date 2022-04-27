@@ -48,6 +48,8 @@ def train_model_batch(
     -------
     loss : torch.Tensor
         loss of the batch data_related object
+    roc_auc : float
+        ROC AUC of batch data
     """
     # set the model to train mode
     model.train()
@@ -61,8 +63,10 @@ def train_model_batch(
     loss.backward()
     # make a step with the optimizer
     optimizer.step()
+    # calculate the roc auc
+    roc_auc = roc_auc_score(data.y.cpu(), link_logits.sigmoid().cpu())
     # return the loss
-    return loss
+    return loss, roc_auc
 
 
 @torch.no_grad()
@@ -173,7 +177,8 @@ def test_model_basic(
                             GNN_LGConv_homogen_variable,
                             GNN_SAGEConv_homogen],
         batcher: edge_batch.EdgeConvolutionBatcher,
-        device
+        device,
+        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
 ):
     """
     Takes model and batcher executes all batches and accumulates the logits and labels to calulate and return the roc
@@ -210,8 +215,12 @@ def test_model_basic(
         current_batch.detach()
     # fuze logits
     logits_collector = torch.cat(logits_collector)
+    # calculate roc auc score
+    roc_auc = roc_auc_score(batcher.target.cpu(), logits_collector.sigmoid().cpu())
+    # calculate loss
+    loss = loss_function(logits_collector, batcher.target)
     # return roc
-    return roc_auc_score(batcher.target.cpu(), logits_collector.sigmoid().cpu())
+    return loss.detach(), roc_auc
 
 
 def train_model(
@@ -224,7 +233,7 @@ def train_model(
         optimizer,
         device,
         loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
-) -> torch.Tensor:
+) -> typing.Dict[str, typing.Union[typing.List[float], typing.List[torch.Tensor]]]:
     """
     Execute the training for one epoch. Returns the averaged loss.
 
@@ -248,21 +257,27 @@ def train_model(
 
     Returns
     -------
-    loss : torch.Tensor
-        averaged loss over all the batches using the edge_index size
+    train_recording : typing.Dict[str, typing.Union[typing.List[float], typing.List[torch.Tensor]]]
+        recording dict including loss and roc auc of batches
     """
-    # define accumulate variable for summing up loss from batches
-    loss_accumulate = 0
+    # dictionary for recording loss and roc auc
+    recording_dict = {
+        "loss": [],
+        "roc_auc": []
+    }
     # for all batch data_related objects stored in batcher do
     for i in tqdm(range(len(batch_list))):
         # fetch batch data object
         current_batch = batch_list(i).to(device)
         # calculate loss and add it to total loss
-        loss_accumulate += train_model_batch(model,
-                                             optimizer,
-                                             current_batch,
-                                             loss_function).detach() * current_batch.edge_index.size(1)
+        current_loss, current_roc_auc = train_model_batch(model,
+                                                          optimizer,
+                                                          current_batch,
+                                                          loss_function).detach() * current_batch.edge_index.size(1)
+        # add current results to tracker
+        recording_dict["loss"].append(current_loss.detach())
+        recording_dict["roc_auc"].append(current_roc_auc)
         # detach batch data object from device
         current_batch.detach()
     # calculate the average loss and return it
-    return loss_accumulate / batch_list.edges.size(1)
+    return recording_dict

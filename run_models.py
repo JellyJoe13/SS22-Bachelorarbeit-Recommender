@@ -45,8 +45,9 @@ def run_epoch(
         assert type(data_object) == dict
         train_batcher = data_object["train"]
         test_batcher = data_object["test"]
-        loss = run_tools.train_model(model, train_batcher, optimizer, device, loss_function=loss_function)
+        training_records = run_tools.train_model(model, train_batcher, optimizer, device, loss_function=loss_function)
         roc_auc = run_tools.test_model_basic(model, test_batcher, device)
+        return training_records, roc_auc
     else:
         assert type(data_object) == torch_geometric.data.Data
         # fullbatch on pytorch
@@ -123,7 +124,8 @@ def full_experimental_run(
             loss, roc_auc = run_epoch(model, optimizer, data_object, model_id, device, model_loader, loss_function)
             protocoller.register_loss(epoch, loss)
             protocoller.register_roc_auc(epoch, roc_auc)
-            print("Epoch:", epoch, "| loss:", float(loss), "| ROC AUC:", float(roc_auc))
+            print("Epoch:", epoch,  "| ROC AUC:", float(roc_auc))
+            print("Training loss/track data: ", (float(loss) if type(loss) == torch.Tensor else loss))
             if model_loader.should_execute_esc(model_id):
                 # differ validation_method if we have minibatching enabled
                 if model_loader.is_batched(model_id):
