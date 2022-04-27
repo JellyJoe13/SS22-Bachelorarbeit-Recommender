@@ -132,7 +132,8 @@ def smiles_and_rdkit_chem_param_generation(
     # SEPARATING BETWEEN MODES missing
     if generate:
         # Modus where rdkit is used to generate the descriptors. any empty_GNN_x is ignored (currently)
-        # Note: this is very time-consuming so that the pre-generated x is stored in a csv file in the data_related folder.
+        # Note: this is very time-consuming so that the pre-generated x is stored in a csv file in the data_related
+        # folder.
         # if the file exists we load it from there
         load_path1 = os.path.join(path_top_dir, "data", "descriptors_x_transformed2.csv")
         if exists(load_path1):
@@ -172,8 +173,9 @@ def smiles_and_rdkit_chem_param_generation(
         # no descriptors will be computed
         if empty_GNN_x <= 0:
             # in this case the number of parameters shall be the same as the number of descriptors.
-            # All values are set to 0
-            return torch.tensor(np.ones(shape=((aid_count + cid_count), len(Descriptors.descList))), dtype=torch.float)
+            num_node_features = 205
+            # All values are set to 1
+            return torch.tensor(np.ones(shape=((aid_count + cid_count), num_node_features)), dtype=torch.float)
         else:
             # this means a specific amount is set, it will generate this specific number of parameters for each node
             return torch.tensor(np.ones(shape=((aid_count + cid_count), empty_GNN_x)), dtype=torch.float)
@@ -187,8 +189,8 @@ def data_transform_split(
         empty_GNN_x: int = 0
 ) -> typing.Union[typing.Tuple[surprise.Trainset, typing.List[tuple]], torch_geometric.data.Data]:
     """
-    A function that turns the pandas data_related into test and train-set data_related in which the mode determines which type of
-    train test splitting is done.
+    A function that turns the pandas data_related into test and train-set data_related in which the mode determines
+    which type of train test splitting is done.
 
     Parameters
     ----------
