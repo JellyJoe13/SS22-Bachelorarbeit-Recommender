@@ -34,7 +34,7 @@ class DataProtocoller:
     def register_loss(
             self,
             epoch: int,
-            loss: torch.Tensor
+            loss: typing.Union[torch.Tensor, typing.Dict[str, typing.List[float]]]
     ) -> None:
         """
         Function that allows for tracking the loss of the training and allowing it for saving purposes.
@@ -52,7 +52,10 @@ class DataProtocoller:
         """
         if epoch not in self.__epoch_dict[epoch]:
             self.__epoch_dict[epoch] = {}
-        self.__epoch_dict[epoch]["loss"] = float(loss)
+        if type(loss) == torch.Tensor:
+            self.__epoch_dict[epoch]["training_recording"] = float(loss)
+        else:
+            self.__epoch_dict[epoch]["training_recording"] = loss
         return
 
     def register_roc_auc(
