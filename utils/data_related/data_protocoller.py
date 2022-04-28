@@ -28,13 +28,16 @@ class DataProtocoller:
         self.name = name
         self.__epoch_dict = {
             "name": name,
-            "loss_name": loss_name
+            "loss_name": loss_name,
+            "training": {},
+            "validating": {},
+            "testing": {}
         }
 
-    def register_loss(
+    def register_train_data(
             self,
             epoch: int,
-            loss: typing.Union[torch.Tensor, typing.Dict[str, typing.List[float]]]
+            train_protocol: typing.Union[float, typing.Dict[str, typing.List[float]]]
     ) -> None:
         """
         Function that allows for tracking the loss of the training and allowing it for saving purposes.
@@ -43,31 +46,32 @@ class DataProtocoller:
         ----------
         epoch : int
             Information on which epoch the loss corresponds to
-        loss : torch.Tensor
+        train_protocol : torch.Tensor
             Loss which was computed in the training phase of the epoch that was supplied.
 
         Returns
         -------
         Nothing
         """
-        if epoch not in self.__epoch_dict[epoch]:
-            self.__epoch_dict[epoch] = {}
-        if type(loss) == torch.Tensor:
-            self.__epoch_dict[epoch]["training_recording"] = float(loss)
-        else:
-            self.__epoch_dict[epoch]["training_recording"] = loss
+        self.__epoch_dict["training"][epoch] = train_protocol
         return
 
-    def register_roc_auc(
+    def register_test_data(
             self,
             epoch: int,
-            roc_auc: float
+            iteration: int = -1,
+            roc_auc: float = None,
+            loss: float = None
     ) -> None:
         """
-        Function that allows for tracking the roc auc of the testing and allowing it for saving purposes.
+        Function that allows for tracking the roc auc and loss of the testing and allowing it for saving purposes.
 
         Parameters
         ----------
+        loss : float
+            loss to be tracked for test data
+        iteration : int
+            additional information in case the test was not conducted between training epochs but between learn batches.
         epoch : int
             Information on which epoch the roc auc corresponds to
         roc_auc : int
@@ -77,9 +81,28 @@ class DataProtocoller:
         -------
         Nothing
         """
-        if epoch not in self.__epoch_dict[epoch]:
-            self.__epoch_dict[epoch] = {}
-        self.__epoch_dict[epoch]["roc_auc"] = roc_auc
+        if epoch not in self.__epoch_dict["testing"]:
+            self.__epoch_dict["testing"][epoch] = {}
+        self.__epoch_dict["testing"][epoch][iteration] = {
+            "loss": loss,
+            "roc_auc": roc_auc
+        }
+        return
+
+    def register_val_data(
+            self,
+            epoch: int,
+            loss: float = None,
+            roc_auc: float = None,
+            iteration: int = -1
+    ) -> None:
+        if epoch not in self.__epoch_dict["validating"]:
+            self.__epoch_dict["validating"][epoch] = {}
+        val_epoch_entry = self.__epoch_dict["validating"][epoch]
+        val_epoch_entry[iteration] = {
+            "loss": loss,
+            "roc_auc": roc_auc
+        }
         return
 
     def register_precision_recall(

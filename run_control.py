@@ -91,7 +91,7 @@ class RunControl:
             # for loop ended
             # in case we reached max_iteration for this epoch write epoch information to protocoller
             if end_iteration == len(self.data_object["train"]):
-                self.protocoller.register_loss(self.current_train_epoch, self.protocol_dict)
+                self.protocoller.register_train_data(self.current_train_epoch, self.protocol_dict)
                 self.protocol_dict = {}
                 self.current_train_epoch += 1
                 self.next_train_iteration = 0
@@ -105,13 +105,36 @@ class RunControl:
                 loss_function=self.loss_function
             )
             # todo: soll vielleicht auch roc von train gleichzeitig messen
-            self.protocoller.register_loss(self.current_train_epoch, loss)
+            self.protocoller.register_train_data(self.current_train_epoch, loss)
             self.current_train_epoch += 1
         return
 
     def do_val_test(
             self
     ):
-        if self.model_loader.is_batched():
-            None
-            # unfinished
+        if self.model_loader.is_batched(self.model_id):
+            val_batcher = self.data_object["val"]
+            loss, roc_auc = run_tools.test_model_basic(
+                model=self.model,
+                batcher=val_batcher,
+                device=self.device,
+                loss_function=self.loss_function
+            )
+            self.protocoller.register_val_data(
+                self.current_train_epoch,
+                loss,
+                roc_auc,
+                self.next_train_iteration
+            )
+        else:
+            roc_auc = model_workspace.GNN_fullbatch_homogen_GCNConv.test(
+                self.model,
+                self.data_object,
+                learn_model="val"
+            )
+            # todo: protocol loss
+            self.protocoller.register_val_data(
+                epoch=self.current_train_epoch,
+                roc_auc=roc_auc
+            )
+        return

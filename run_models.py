@@ -57,7 +57,7 @@ def run_epoch(
                                                                    loss_function=loss_function).detach()
         roc_auc = model_workspace.GNN_fullbatch_homogen_GCNConv.test(model,
                                                                      data_object)
-    return loss, roc_auc
+    return float(loss), roc_auc
 
 
 def full_test_run(
@@ -122,8 +122,11 @@ def full_experimental_run(
             do_full_test = False
             # whatever
             loss, roc_auc = run_epoch(model, optimizer, data_object, model_id, device, model_loader, loss_function)
-            protocoller.register_loss(epoch, loss)
-            protocoller.register_roc_auc(epoch, roc_auc)
+            protocoller.register_train_data(epoch, loss)
+            protocoller.register_test_data(
+                epoch=epoch,
+                roc_auc=roc_auc
+            )
             print("Epoch:", epoch,  "| ROC AUC:", float(roc_auc))
             print("Training loss/track data: ", (float(loss) if type(loss) == torch.Tensor else loss))
             if model_loader.should_execute_esc(model_id):
