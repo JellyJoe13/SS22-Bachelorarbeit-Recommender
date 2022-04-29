@@ -12,7 +12,8 @@ class DataProtocoller:
     def __init__(
             self,
             name: str,
-            loss_name: str
+            loss_name: str,
+            model_id: int
     ):
         """
         Initialize the DataProtocoller class with the name of the model or the experiment and the used loss name which
@@ -20,6 +21,8 @@ class DataProtocoller:
 
         Parameters
         ----------
+        model_id : int
+            Denotes model identifier with which the model can be polled from model_config.py
         name : str
             specifies the name of the model or experiment
         loss_name : str
@@ -29,6 +32,7 @@ class DataProtocoller:
         self.__epoch_dict = {
             "name": name,
             "loss_name": loss_name,
+            "model_id": model_id,
             "training": {},
             "validating": {},
             "testing": {}

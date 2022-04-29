@@ -24,7 +24,7 @@ def train_model_batch(
         optimizer,
         data: torch_geometric.data.Data,
         loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
-) -> torch.Tensor:
+) -> typing.Tuple[torch.Tensor, float]:
     """
     Helper function that executes the train step for a batch data_related object.
 
@@ -64,7 +64,7 @@ def train_model_batch(
     # make a step with the optimizer
     optimizer.step()
     # calculate the roc auc
-    roc_auc = roc_auc_score(data.y.cpu(), link_logits.sigmoid().cpu())
+    roc_auc = roc_auc_score(data.y.detach().numpy(), link_logits.sigmoid().detach().numpy())
     # return the loss
     return loss, roc_auc
 
