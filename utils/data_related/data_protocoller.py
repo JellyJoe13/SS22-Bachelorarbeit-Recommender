@@ -35,7 +35,8 @@ class DataProtocoller:
             "model_id": model_id,
             "training": {},
             "validating": {},
-            "testing": {}
+            "testing": {},
+            "accuracy": {}
         }
 
     def register_train_data(
@@ -132,17 +133,17 @@ class DataProtocoller:
         -------
         Nothing
         """
-        if epoch not in self.__epoch_dict[epoch]:
-            self.__epoch_dict[epoch] = {}
+        if epoch not in self.__epoch_dict["accuracy"]:
+            self.__epoch_dict["accuracy"][epoch] = {}
         if type(precision) == tuple:
-            self.__epoch_dict[epoch]["precision"] = {
+            self.__epoch_dict["accuracy"][epoch]["precision"] = {
                 "constant": precision[0],
                 "relative": precision[1]
             }
         else:
-            self.__epoch_dict[epoch]["precision"] = precision
+            self.__epoch_dict["accuracy"][epoch]["precision"] = precision
         if type(recall) == tuple:
-            self.__epoch_dict[epoch]["recall"] = {
+            self.__epoch_dict["accuracy"][epoch]["recall"] = {
                 "constant": recall[0],
                 "relative": recall[1]
             }
