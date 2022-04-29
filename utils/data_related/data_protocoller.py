@@ -64,7 +64,7 @@ class DataProtocoller:
     def register_test_data(
             self,
             epoch: int,
-            iteration: int = -1,
+            iteration: int = 0,
             roc_auc: float = None,
             loss: float = None
     ) -> None:
@@ -99,7 +99,7 @@ class DataProtocoller:
             epoch: int,
             loss: float = None,
             roc_auc: float = None,
-            iteration: int = -1
+            iteration: int = 0
     ) -> None:
         if epoch not in self.__epoch_dict["validating"]:
             self.__epoch_dict["validating"][epoch] = {}
