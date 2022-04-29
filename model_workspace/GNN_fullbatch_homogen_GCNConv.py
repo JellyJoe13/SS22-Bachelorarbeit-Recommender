@@ -225,6 +225,45 @@ def test(
 
 
 @torch.no_grad()
+def test_with_loss(
+        model: GNN_homogen_chemData_GCN,
+        data: torch_geometric.data.Data,
+        learn_model: str = "test",
+        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
+):
+    """
+    Function used for executing a test of the model using the data_related stored in the data_related object.
+
+    Parameters
+    ----------
+    model : GNN_homogen_chemData_GCN
+        model used for testing
+    data : torch_geometric.data.Data
+        data_related which contains the test data_related for the test process
+    learn_model : str
+        learn model which defines which part of the dataset should be tasted. Options: "test", "train", "val". Edges for
+        this learn set must exist in data_related object
+    loss_function : typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
+        function with two torch.Tensors and returns a torch.Tensor which represents the loss.
+
+    Returns
+    -------
+    roc_auc_score
+        Value containing the roc auc score which represents the area under the roc curve. See documentation of scikit
+        learn to learn more about this score.
+    """
+    model.eval()
+    link_logits = model.decode(model.encode(),
+                               data[learn_model + "_pos_edge_index"],
+                               data[learn_model + "_neg_edge_index"])
+    link_labels = model.get_link_labels(data[learn_model + "_pos_edge_index"],
+                                        data[learn_model + "_neg_edge_index"])
+    loss = loss_function(link_logits, link_labels)
+    roc_auc = roc_auc_score(link_labels.cpu(), link_logits.sigmoid().cpu())
+    return float(loss.detach()), roc_auc
+
+
+@torch.no_grad()
 def full_test(
         model: GNN_homogen_chemData_GCN,
         data: torch_geometric.data.Data,
@@ -257,10 +296,12 @@ def full_test(
     print(link_logits)
     link_labels = model.get_link_labels(data.test_pos_edge_index, data.test_neg_edge_index)
     # compute recall and precision
-    precision, recall = accuracy_precision_recall(torch.cat([data.test_pos_edge_index, data.test_neg_edge_index],
-                                                            dim=-1),
-                                                  link_labels,
-                                                  link_logits)
+    precision, recall = accuracy_precision_recall(
+        torch.cat([data.test_pos_edge_index, data.test_neg_edge_index], dim=-1),
+        link_labels,
+        link_logits,
+        mode="both"
+    )
     print("precision:", precision, "\nrecall:", recall)
     # create file name for plot
     file_name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \

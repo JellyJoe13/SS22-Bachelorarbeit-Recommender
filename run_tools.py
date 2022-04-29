@@ -79,8 +79,8 @@ def test_model_batch(
         data: torch_geometric.data.Data
 ):
     """
-    Helper function that executes a simple evaluation for a batch data_related object and determines the logits of the edges to
-    predict.
+    Helper function that executes a simple evaluation for a batch data_related object and determines the logits of the
+    edges to predict.
 
     Parameters
     ----------
@@ -220,7 +220,7 @@ def test_model_basic(
     # calculate loss
     loss = loss_function(logits_collector, batcher.target)
     # return roc
-    return loss.detach(), roc_auc
+    return float(loss.detach()), roc_auc
 
 
 def train_model(

@@ -19,6 +19,7 @@ class RunControl:
         self.protocol_dict = {}
         self.model_id = model_id
         self.batch_size = batch_size
+        self.split_mode = split_mode
         self.model_loader = ModelLoader()
         # initialize training necessities
         if self.model_loader.works_on_cuda(model_id):
@@ -127,14 +128,86 @@ class RunControl:
                 self.next_train_iteration
             )
         else:
-            roc_auc = model_workspace.GNN_fullbatch_homogen_GCNConv.test(
-                self.model,
-                self.data_object,
-                learn_model="val"
+            loss, roc_auc = model_workspace.GNN_fullbatch_homogen_GCNConv.test_with_loss(
+                model=self.model,
+                data=self.data_object,
+                learn_model="val",
+                loss_function=self.loss_function
             )
-            # todo: protocol loss
             self.protocoller.register_val_data(
                 epoch=self.current_train_epoch,
-                roc_auc=roc_auc
+                roc_auc=roc_auc,
+                loss=loss
             )
         return
+
+    def do_test_test(
+            self
+    ):
+        if self.model_loader.is_batched(self.model_id):
+            # model is batched
+            test_batcher = self.data_object["test"]
+            loss, roc_auc = run_tools.test_model_basic(
+                model=self.model,
+                batcher=test_batcher,
+                device=self.device,
+                loss_function=self.loss_function
+            )
+            self.protocoller.register_test_data(
+                epoch=self.current_train_epoch,
+                iteration=self.next_train_iteration,
+                roc_auc=roc_auc,
+                loss=loss
+            )
+        else:
+            loss, roc_auc = model_workspace.GNN_fullbatch_homogen_GCNConv.test_with_loss(
+                model=self.model,
+                data=self.data_object,
+                learn_model="test",
+                loss_function=self.loss_function
+            )
+            self.protocoller.register_val_data(
+                epoch=self.current_train_epoch,
+                roc_auc=roc_auc,
+                loss=loss
+            )
+        return
+
+    def do_full_test(self):
+        if self.model_loader.is_batched(self.model_id):
+            precision, recall = run_tools.test_model_advanced(
+                model=self.model,
+                batcher=self.data_object["test"],
+                model_id=self.model_id,
+                device=self.device,
+                epoch=self.current_train_epoch,
+                split_mode=self.split_mode
+            )
+            self.protocoller.register_precision_recall(precision, recall)
+        else:
+            precision, recall = model_workspace.GNN_fullbatch_homogen_GCNConv.full_test(
+                model=self.model,
+                data=self.data_object,
+                model_id=self.model_id,
+                epoch=self.current_train_epoch,
+                split_mode=self.split_mode
+            )
+            self.protocoller.register_precision_recall(precision, recall)
+        return
+
+    def run_epoch(
+            self,
+            val_test_frequency: int
+    ):
+        if self.model_loader.is_batched(self.model_id):
+            assert val_test_frequency > 0
+            # for loop over train batcher
+            for iteration in range(0, len(self.data_object["train"]), val_test_frequency):
+                self.do_train_step(val_test_frequency)
+                self.do_val_test()
+                self.do_test_test()
+        else:
+            self.do_train_step(val_test_frequency)
+            self.do_val_test()
+            self.do_test_test()
+        self.do_full_test()
