@@ -16,8 +16,6 @@ class GNN_GATConv_homogen(torch.nn.Module):
             self.conv2 = torch_geometric.nn.conv.GATConv(num_features_hidden, num_features_out)
         else:
             self.conv1 = torch_geometric.nn.conv.GATConv(num_features_input, num_features_out)
-        self.bilinear = torch.nn.Bilinear(num_features_out, num_features_out, 1)
-        self.flatten = torch.nn.Flatten(0, -1)
 
     def fit_predict(
             self,
@@ -29,8 +27,9 @@ class GNN_GATConv_homogen(torch.nn.Module):
         x = self.conv1(x, pos_edge_index_input)
         if self.mode:
             x = self.conv2(x, pos_edge_index_input)
-        x = self.bilinear(x[edge_index_input[0]], x[edge_index_input[1]])
-        return self.flatten(x)
+        # convert the node embedding that was generated to the edge score/logits
+        logits = (x[edge_index_input[0]] * x[edge_index_input[1]]).sum(dim=-1)
+        return logits
 
     def get_name(self) -> str:
         return "GNN_homogen_minibatch_GATConv_" + str(self.mode)
