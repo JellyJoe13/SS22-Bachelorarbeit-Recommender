@@ -1,5 +1,4 @@
 import torch
-from torch_geometric.nn import functional as F
 """
 This whole file inspired by the Standford CS224W Machine Learning with Graphs course project and utilized the loss
 function from it to be used in this project. Read more about the project via
@@ -33,7 +32,7 @@ def compute_bpr_loss(
     # create every combination of every pos score with every neg score
     combinations = torch.cat([pos_entry-neg_scores for pos_entry in pos_scores])
     # calculate the mean of these combinations
-    bpr_loss = torch.mean(F.softplus(combinations))
+    bpr_loss = torch.mean(torch.nn.functional.softplus(combinations))
     # returns the computed loss
     return bpr_loss
 
@@ -43,7 +42,7 @@ def adapter_brp_loss_GNN(
         link_labels: torch.Tensor
 ) -> torch.Tensor:
     """
-    Function used as a parameter for function compute_bpr_loss() in case the pos and neg schores were not computed yet.
+    Function used as a parameter for function compute_bpr_loss() in case the pos and neg scores were not computed yet.
 
     Parameters
     ----------
