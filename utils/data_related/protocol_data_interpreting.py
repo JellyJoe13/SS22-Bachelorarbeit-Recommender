@@ -38,6 +38,7 @@ class DataInterpreter:
         epochs = list(set(list(self.data_store["training"].keys())
                           + list(self.data_store["validating"].keys())
                           + list(self.data_store["testing"].keys())))
+        print(epochs)
         epoch_mapping = [0]
         if self.batched:
             train_loss = {}
@@ -47,29 +48,119 @@ class DataInterpreter:
                 epoch_it_size = len(self.data_store["training"][epoch]) if epoch in self.data_store["training"] else 1
                 epoch_mapping.append(epoch_mapping[epoch] + epoch_it_size)
                 # training
-                if epoch not in self.data_store["training"]:
-                    continue
-                for key, value in self.data_store["training"][epoch].items():
-                    train_loss[key + epoch_mapping[epoch]] = value
+                if epoch in self.data_store["training"]:
+                    for key, value in self.data_store["training"][epoch].items():
+                        train_loss[key + epoch_mapping[epoch]] = value["loss"]
                 # validating
-                if epoch not in self.data_store["validating"]:
-                    continue
-                for key, value in self.data_store["validating"][epoch].items():
-                    val_loss[key + epoch_mapping[epoch]] = value
+                if epoch in self.data_store["validating"]:
+                    for key, value in self.data_store["validating"][epoch].items():
+                        val_loss[key + epoch_mapping[epoch]] = value["loss"]
                 # testing
-                if epoch not in self.data_store["testing"]:
-                    continue
-                for key, value in self.data_store["testing"][epoch].items():
-                    test_loss[key + epoch_mapping[epoch]] = value
-            # rework so that it only contains loss
-            train_loss = dict(zip(train_loss.keys(), [i["loss"] for i in train_loss.values()]))
-            val_loss = dict(zip(val_loss.keys(), [i["loss"] for i in val_loss.values()]))
-            test_loss = dict(zip(test_loss.keys(), [i["loss"] for i in test_loss.values()]))
-            # todo: plot this
-            return epoch_mapping, train_loss, val_loss, test_loss
+                if epoch in self.data_store["testing"]:
+                    for key, value in self.data_store["testing"][epoch].items():
+                        test_loss[key + epoch_mapping[epoch]] = value["loss"]
+            # plotting graph
+            fig = plt.figure(0)
+            plt.plot(train_loss.keys(), train_loss.values(), 'x-', label='train')
+            plt.plot(test_loss.keys(), test_loss.values(), 'x-', label='test')
+            plt.plot(val_loss.keys(), val_loss.values(), 'x-', label="val")
+            plt.title("Tracked losses")
+            plt.xlabel("total iterations")
+            plt.ylabel("loss value")
+            plt.legend()
+            for epoch in epoch_mapping:
+                plt.axvline(x=epoch, label="epochs", linestyle=':', color='lightgray')
+            plt.show()
+            return
         else:
             # fullbatched and boring
-            # todo: implement this
-            None
-        # collect data
-        # todo: other diagrams
+            train_loss = dict(zip(self.data_store["training"].keys(),
+                                  [i["loss"] for i in self.data_store["training"].values()]))
+            val_loss = dict(zip(self.data_store["validating"].keys(),
+                                [i["loss"] for i in self.data_store["validating"].values()]))
+            test_loss = dict(zip(self.data_store["testing"].keys(),
+                                 [i["loss"] for i in self.data_store["testing"].values()]))
+            fig = plt.figure(0)
+            plt.plot(train_loss.keys(), train_loss.values(), 'x-', label='train')
+            plt.plot(test_loss.keys(), test_loss.values(), 'x-', label='test')
+            plt.plot(val_loss.keys(), val_loss.values(), 'x-', label="val")
+            plt.title("Tracked losses")
+            plt.xlabel("epochs")
+            plt.ylabel("loss value")
+            plt.legend()
+            plt.show()
+            return
+
+    def create_roc_auc_plot(self):
+        epochs = list(set(list(self.data_store["training"].keys())
+                          + list(self.data_store["validating"].keys())
+                          + list(self.data_store["testing"].keys())))
+        print(epochs)
+        epoch_mapping = [0]
+        if self.batched:
+            train_loss = {}
+            val_loss = {}
+            test_loss = {}
+            for epoch in epochs:
+                epoch_it_size = len(self.data_store["training"][epoch]) if epoch in self.data_store["training"] else 1
+                epoch_mapping.append(epoch_mapping[epoch] + epoch_it_size)
+                # training
+                if epoch in self.data_store["training"]:
+                    for key, value in self.data_store["training"][epoch].items():
+                        train_loss[key + epoch_mapping[epoch]] = value["roc_auc"]
+                # validating
+                if epoch in self.data_store["validating"]:
+                    for key, value in self.data_store["validating"][epoch].items():
+                        val_loss[key + epoch_mapping[epoch]] = value["roc_auc"]
+                # testing
+                if epoch in self.data_store["testing"]:
+                    for key, value in self.data_store["testing"][epoch].items():
+                        test_loss[key + epoch_mapping[epoch]] = value["roc_auc"]
+            # plotting graph
+            fig = plt.figure(0)
+            plt.plot(train_loss.keys(), train_loss.values(), 'x-', label='train')
+            plt.plot(test_loss.keys(), test_loss.values(), 'x-', label='test')
+            plt.plot(val_loss.keys(), val_loss.values(), 'x-', label="val")
+            plt.title("Tracked ROC AUC scores")
+            plt.xlabel("total iterations")
+            plt.ylabel("ROC AUC value")
+            plt.legend()
+            for epoch in epoch_mapping:
+                plt.axvline(x=epoch, label="epochs", linestyle=':', color='lightgray')
+            plt.show()
+            return
+        else:
+            # fullbatched and boring
+            train_loss = dict(zip(self.data_store["training"].keys(),
+                                  [i["roc_auc"] for i in self.data_store["training"].values()]))
+            val_loss = dict(zip(self.data_store["validating"].keys(),
+                                [i["roc_auc"] for i in self.data_store["validating"].values()]))
+            test_loss = dict(zip(self.data_store["testing"].keys(),
+                                 [i["roc_auc"] for i in self.data_store["testing"].values()]))
+            fig = plt.figure(0)
+            plt.plot(train_loss.keys(), train_loss.values(), 'x-', label='train')
+            plt.plot(test_loss.keys(), test_loss.values(), 'x-', label='test')
+            plt.plot(val_loss.keys(), val_loss.values(), 'x-', label="val")
+            plt.title("Tracked ROC AUC scores")
+            plt.xlabel("epochs")
+            plt.ylabel("ROC AUC value")
+            plt.legend()
+            plt.show()
+            return
+
+    def create_accuracy_plot(self):
+        precision = dict(zip(self.data_store["accuracy"].keys(),
+                             [i["precision"] for i in self.data_store["accuracy"].values()]))
+        recall = dict(zip(self.data_store["accuracy"].keys(),
+                          [i["recall"] for i in self.data_store["accuracy"].values()]))
+        fig = plt.figure(0)
+        plt.plot(precision.keys(), [i["constant"] for i in precision.values()], 'x-', label='precision_constant')
+        plt.plot(precision.keys(), [i["relative"] for i in precision.values()], 'x-', label='precision_relative')
+        plt.plot(recall.keys(), [i["constant"] for i in recall.values()], 'x-', label='recall_constant')
+        plt.plot(recall.keys(), [i["relative"] for i in recall.values()], 'x-', label='recall_relative')
+        plt.legend()
+        plt.title("Accuracy scores")
+        plt.xlabel("epochs")
+        plt.ylabel("value of accuracy scores")
+        plt.show()
+        return
