@@ -237,6 +237,9 @@ class RunControl:
             val_test_frequency: int,
             max_epochs: int
     ):
+        self.do_full_test()
+        self.do_val_test()
+        self.do_test_test()
         for epoch in tqdm(range(max_epochs)):
             self.run_epoch(val_test_frequency)
         return
