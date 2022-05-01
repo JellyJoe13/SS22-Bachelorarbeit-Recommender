@@ -10,6 +10,10 @@ Important note: Original content is heavily modified to fit the usage in this pr
 """
 
 
+# todo: needs tremendous reworking as allocating way to much time and memory:
+# use log(sigmoid()) instead of softmax
+# use sum over all positive/negative scores per user and then apply sigmoid, log and mean over all users in set
+# redefine batching for using whole users if possible: sklearn GroupShuffleSplit
 def compute_bpr_loss(
         pos_scores: torch.Tensor,
         neg_scores: torch.Tensor
