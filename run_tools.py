@@ -1,6 +1,7 @@
 import typing
 from tqdm.auto import tqdm
 
+import utils.accuracy.accuarcy_bpr
 from model_workspace.GNN_minibatch_homogen_GATConv import GNN_GATConv_homogen
 from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homogen_basic
 from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_variable
@@ -23,15 +24,19 @@ def train_model_batch(
                             GNN_SAGEConv_homogen],
         optimizer,
         data: torch_geometric.data.Data,
-        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
+        loss_function: typing.Callable[[torch.Tensor,
+                                        torch.Tensor,
+                                        torch.Tensor], torch.Tensor] = utils.accuracy.accuarcy_bpr.binary_loss_adapter
 ) -> typing.Tuple[torch.Tensor, float]:
     """
     Helper function that executes the train step for a batch data_related object.
 
     Parameters
     ----------
-    loss_function : typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-        function with two torch.Tensors and returns a torch.Tensor which represents the loss and .backward() will be
+    loss_function: typing.Callable[[torch.Tensor,
+                                    torch.Tensor,
+                                    torch.Tensor], torch.Tensor]
+        function with three torch.Tensors and returns a torch.Tensor which represents the loss and .backward() will be
         called from the result.
     model : typing.Union[GNN_GCNConv_homogen,
                          GNN_GATConv_homogen,
@@ -58,7 +63,7 @@ def train_model_batch(
     # fit and predict the edges using the edge_index
     link_logits = model.fit_predict(data.x, data.edge_index, data.pos_edge_index)
     # calculate loss
-    loss = loss_function(link_logits, data.y)
+    loss = loss_function(link_logits, data.y, data.edge_index)
     # backward optimize loss
     loss.backward()
     # make a step with the optimizer
@@ -178,7 +183,9 @@ def test_model_basic(
                             GNN_SAGEConv_homogen],
         batcher: edge_batch.EdgeConvolutionBatcher,
         device,
-        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
+        loss_function: typing.Callable[[torch.Tensor,
+                                        torch.Tensor,
+                                        torch.Tensor], torch.Tensor] = utils.accuracy.accuarcy_bpr.binary_loss_adapter
 ):
     """
     Takes model and batcher executes all batches and accumulates the logits and labels to calulate and return the roc
@@ -186,6 +193,10 @@ def test_model_basic(
 
     Parameters
     ----------
+    loss_function : typing.Callable[[torch.Tensor,
+                                     torch.Tensor,
+                                     torch.Tensor], torch.Tensor]
+        loss function which is used to calculate the loss
     model : typing.Union[GNN_GCNConv_homogen,
                          GNN_GATConv_homogen,
                          GNN_GCNConv_homogen_basic,
@@ -218,7 +229,7 @@ def test_model_basic(
     # calculate roc auc score
     roc_auc = roc_auc_score(batcher.target.cpu(), logits_collector.sigmoid().cpu())
     # calculate loss
-    loss = loss_function(logits_collector, batcher.target)
+    loss = loss_function(logits_collector, batcher.target, batcher.edges)
     # return roc
     return float(loss.detach()), roc_auc
 
@@ -232,15 +243,19 @@ def train_model(
         batch_list: edge_batch.EdgeBatcher,
         optimizer,
         device,
-        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
+        loss_function: typing.Callable[[torch.Tensor,
+                                        torch.Tensor,
+                                        torch.Tensor], torch.Tensor] = utils.accuracy.accuarcy_bpr.binary_loss_adapter
 ) -> typing.Dict[str, typing.Union[typing.List[float], typing.List[torch.Tensor]]]:
     """
     Execute the training for one epoch. Returns the averaged loss.
 
     Parameters
     ----------
-    loss_function : typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-        function with two torch.Tensors and returns a torch.Tensor which represents the loss and .backward() will be
+    loss_function: typing.Callable[[torch.Tensor,
+                                    torch.Tensor,
+                                    torch.Tensor], torch.Tensor]
+        function with three torch.Tensors and returns a torch.Tensor which represents the loss and .backward() will be
         called from the result.
     device : torch.Device
         device to run the algorithm on

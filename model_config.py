@@ -18,6 +18,7 @@ from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homoge
 from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_variable
 from model_workspace.GNN_minibatch_homogen_GATConv import GNN_GATConv_homogen
 from model_workspace.GNN_minibatch_homogen_SAGEConv import GNN_SAGEConv_homogen
+from utils.accuracy.accuarcy_bpr import binary_loss_adapter, bpr_loss_revised
 
 
 # todo: change is_batching to only convolution info with neg values?
@@ -38,8 +39,8 @@ class ModelLoader:
             5: GNN_SAGEConv_homogen
         }
         self.loss_function_storage = {
-            "binary": F.binary_cross_entropy_with_logits,
-            "bpr": utils.accuracy.accuarcy_bpr.adapter_brp_loss_GNN
+            "binary": binary_loss_adapter,
+            "bpr": bpr_loss_revised
         }
         self.model_settings_dict = {
             # surpriselib model with baseline recommender
