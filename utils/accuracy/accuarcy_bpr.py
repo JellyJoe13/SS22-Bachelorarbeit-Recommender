@@ -29,6 +29,11 @@ def bpr_loss_revised(
         link_labels: torch.Tensor,
         edge_index: torch.Tensor
 ) -> torch.Tensor:
+    # version 2
+    pos_mean = link_logits[link_labels == 1].mean()
+    neg_mean = link_logits[link_labels == 0].mean()
+    return -torch.nn.functional.logsigmoid(pos_mean - neg_mean)
+    # version 1
     user_index = edge_index.min(dim=0).values
     users = user_index.unique()
     accumulated_loss = None
@@ -40,6 +45,7 @@ def bpr_loss_revised(
         else:
             accumulated_loss -= torch.nn.functional.logsigmoid(pos_scores - neg_scores)
     return accumulated_loss / len(users)
+    # version 0
     score_sum = torch.tensor(
         [link_logits[torch.logical_and(user_index == user, link_labels == 1)].sum() -
          link_logits[torch.logical_and(user_index == user, link_labels == 0)].sum()
