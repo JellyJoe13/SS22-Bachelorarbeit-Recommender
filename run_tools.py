@@ -69,7 +69,7 @@ def train_model_batch(
     # make a step with the optimizer
     optimizer.step()
     # calculate the roc auc
-    roc_auc = roc_auc_score(data.y.detach().numpy(), link_logits.sigmoid().detach().numpy())
+    roc_auc = roc_auc_score(data.y.cpu().numpy(), link_logits.sigmoid().detach().cpu().numpy())
     # return the loss
     return loss, roc_auc
 
@@ -229,7 +229,7 @@ def test_model_basic(
     # calculate roc auc score
     roc_auc = roc_auc_score(batcher.target.cpu(), logits_collector.sigmoid().cpu())
     # calculate loss
-    loss = loss_function(logits_collector, batcher.target, batcher.edges)
+    loss = loss_function(logits_collector, batcher.target.to(device), batcher.edges.to(device))
     # return roc
     return float(loss.detach()), roc_auc
 

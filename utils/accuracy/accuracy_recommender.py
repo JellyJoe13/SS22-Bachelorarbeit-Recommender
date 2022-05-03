@@ -34,8 +34,8 @@ def calc_ROC_curve(
     Nothing, but plots the ROC Curve and saves it if the parameters state it
     """
     # calculate the tpr and fpr using the function from sklearn
-    false_positive_rate, true_positive_rate, _ = sklearn.metrics.roc_curve(link_labels.detach().numpy(),
-                                                                           link_logits.sigmoid().detach().numpy())
+    false_positive_rate, true_positive_rate, _ = sklearn.metrics.roc_curve(link_labels.cpu().numpy(),
+                                                                           link_logits.sigmoid().cpu().numpy())
     # calculate the ROC AUC (area under curve) to put it into the graph as well
     roc_auc = sklearn.metrics.auc(false_positive_rate, true_positive_rate)
     # plot the ROC CURVE
@@ -107,8 +107,8 @@ def accuracy_precision_recall(
     ids = np.min(edge_index.detach().numpy().T, axis=1)
     # create pandas frame (used for grouping
     df = pd.DataFrame(np.c_[ids,
-                            link_labels.detach().numpy(),
-                            link_logits.sigmoid().detach().numpy()],
+                            link_labels.cpu().numpy(),
+                            link_logits.sigmoid().cpu().numpy()],
                       columns=['id', 'true_label', 'pred_label'])
     '''
     The following code is inspired/partially copied from the surpriselib documentation and applied for 
