@@ -2,12 +2,14 @@ import typing
 
 import torch
 import torch_geometric.data
-import torch_geometric.nn.functional as F
+import torch.nn.functional as F
+from utils.accuracy.accuarcy_bpr import binary_loss_adapter
 
 
 def max_subset_size(
         model,
-        loss_function: typing.Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = F.binary_cross_entropy_with_logits
+        loss_function: typing.Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor] = binary_loss_adapter,
+        known_prev_max: int = None
 ) -> None:
     assert torch.cuda.is_available()
     num_nodes = 457560
@@ -17,14 +19,15 @@ def max_subset_size(
     pos_edge_index = torch.randint(
         low=0,
         high=num_nodes,
-        size=(2, num_train_pos_edges)
+        size=(2, num_train_pos_edges),
+        dtype=torch.long
     )
-    current_batch_size = 100000
+    current_batch_size = 100000 if not known_prev_max else known_prev_max
     # define device and optimizer
     device = torch.device('cuda')
     optimizer = torch.optim.Adam(params=model.parameters())
     # transfer model to cuda
-    model = model.to()
+    model = model.to(device)
     while True:
         print("Attempting batch size", current_batch_size)
         data = torch_geometric.data.Data(
@@ -33,22 +36,27 @@ def max_subset_size(
             edge_index=torch.randint(
                 low=0,
                 high=num_nodes,
-                size=(2, current_batch_size)
+                size=(2, current_batch_size),
+                dtype=torch.long
             ),
             y=torch.randint(
                 low=0,
                 high=2,
-                size=(current_batch_size,)
+                size=(current_batch_size,),
+                dtype=torch.float
             )
         )
         data = data.to(device)
         model.train()
         optimizer.zero_grad()
         link_logits = model.fit_predict(data.x, data.edge_index, data.pos_edge_index)
-        loss = loss_function(link_logits, data.y)
+        loss = loss_function(link_logits, data.y, data.edge_index)
         loss.backward()
         optimizer.step()
         data = data.detach()
         print("confirmed")
-        current_batch_size *= 2
+        if not known_prev_max:
+            current_batch_size *= 2
+        else:
+            current_batch_size += int(known_prev_max/10)
     return
