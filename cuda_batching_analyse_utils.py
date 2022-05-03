@@ -9,7 +9,8 @@ from utils.accuracy.accuarcy_bpr import binary_loss_adapter
 def max_subset_size(
         model,
         loss_function: typing.Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor] = binary_loss_adapter,
-        known_prev_max: int = None
+        known_prev_max: int = None,
+        start_size: int = 100000
 ) -> None:
     assert torch.cuda.is_available()
     num_nodes = 457560
@@ -22,7 +23,7 @@ def max_subset_size(
         size=(2, num_train_pos_edges),
         dtype=torch.long
     )
-    current_batch_size = 100000 if not known_prev_max else known_prev_max
+    current_batch_size = start_size if not known_prev_max else known_prev_max
     # define device and optimizer
     device = torch.device('cuda')
     optimizer = torch.optim.Adam(params=model.parameters())

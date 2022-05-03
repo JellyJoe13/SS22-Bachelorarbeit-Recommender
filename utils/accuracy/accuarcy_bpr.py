@@ -31,11 +31,14 @@ def bpr_loss_revised(
 ) -> torch.Tensor:
     user_index = edge_index.min(dim=0).values
     users = user_index.unique()
-    accumulated_loss = torch.zeros(1, dtype=torch.float)
+    accumulated_loss = None
     for user in users:
         pos_scores = link_logits[torch.logical_and(user_index == user, link_labels == 1)].sum()
         neg_scores = link_logits[torch.logical_and(user_index == user, link_labels == 0)].sum()
-        accumulated_loss -= torch.nn.functional.logsigmoid(pos_scores - neg_scores)
+        if not accumulated_loss:
+            accumulated_loss = -torch.nn.functional.logsigmoid(pos_scores - neg_scores)
+        else:
+            accumulated_loss -= torch.nn.functional.logsigmoid(pos_scores - neg_scores)
     return accumulated_loss / len(users)
     score_sum = torch.tensor(
         [link_logits[torch.logical_and(user_index == user, link_labels == 1)].sum() -
