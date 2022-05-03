@@ -35,6 +35,7 @@ class RunControl:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = torch.device('cpu')
+        self.model = self.model.to(self.device)
         self.optimizer = torch.optim.Adam(params=self.model.parameters())
         # load data
         if loaded_data:
