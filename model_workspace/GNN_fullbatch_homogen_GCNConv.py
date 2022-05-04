@@ -199,6 +199,28 @@ def train_with_roc_auc(
                                         torch.Tensor,
                                         torch.Tensor], torch.Tensor] = utils.accuracy.accuarcy_bpr.binary_loss_adapter
 ) -> typing.Tuple[torch.Tensor, float]:
+    """
+    Function which performs a training step for a data object on the model GNN_homogen_chemData_GCN and returns the loss
+    and roc auc of the data being trained.
+
+    Parameters
+    ----------
+    model : GNN_homogen_chemData_GCN
+        model to execute the train operation on.
+    optimizer : torch.optim.Optimizer
+        Optimizer to use for training
+    data : torch.data.Data
+        data to use for training the model
+    loss_function : typing.Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]
+        loss function to use for training to determine the error
+
+    Returns
+    -------
+    loss : torch.Tensor
+        loss for the data trained
+    roc_auc : float
+        roc auc for the data trained on the model
+    """
     # execute training
     model.train()
     optimizer.zero_grad()
