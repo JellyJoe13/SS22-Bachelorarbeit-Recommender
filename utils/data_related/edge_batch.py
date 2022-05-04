@@ -190,8 +190,8 @@ class EdgeConvolutionBatcher:
         # filter pos edge index after incident edges and choose a few random ones (parameter controlled)
         for node in node_list:
             # filter edges incident to this node
-            selected_edges = self.original_data[self.mode_identifier + "_pos_edge_index"][
-                1, self.original_data[self.mode_identifier + "_pos_edge_index"][0] == node]
+            selected_edges = self.original_data["train_pos_edge_index"][
+                1, self.original_data["train_pos_edge_index"][0] == node]
             # randomize the samples
             np.random.shuffle(selected_edges.detach().numpy())
             # choose the first self.edge_sample_count edges and put them into the list
@@ -424,7 +424,7 @@ class EdgeBatcher:
         # return selected subset
         data = torch_geometric.data.Data(
             x=self.original_data.x,
-            pos_edge_index=self.original_data[self.mode_identifier + "_pos_edge_index"],
+            pos_edge_index=self.original_data["train_pos_edge_index"],
             edge_index=self.edges[:, idx_start:idx_end],
             y=self.target[idx_start:idx_end]
         )
