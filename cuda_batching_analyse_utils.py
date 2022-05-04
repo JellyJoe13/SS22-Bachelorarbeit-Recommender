@@ -12,6 +12,26 @@ def max_subset_size(
         known_prev_max: int = None,
         start_size: int = 100000
 ) -> None:
+    """
+    Function that is used to determine the max size that CUDA can handle regarding the batching size/number of edges
+    to predict/learn on.
+
+    Parameters
+    ----------
+    model
+        Model used for learning/predicting edges
+    loss_function : typing.Callable[[torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor]
+        loss function used for training the model
+    known_prev_max : int
+        parameter defining if a previous run with this tool was executed and what the largest confirmed size was so that
+        the increase is not exponential but linear.
+    start_size : int
+        define with with size the tool with start with for the exponential testing of batch size
+
+    Returns
+    -------
+    None
+    """
     assert torch.cuda.is_available()
     num_nodes = 457560
     num_node_features = 205

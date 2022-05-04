@@ -103,6 +103,20 @@ class DataProtocoller:
             roc_auc: float = None,
             iteration: int = 0
     ) -> None:
+        """
+        Function that allows for tracking of the validation loss and roc auc.
+
+        Parameters
+        ----------
+        epoch
+        loss
+        roc_auc
+        iteration
+
+        Returns
+        -------
+
+        """
         if epoch not in self.__epoch_dict["validating"]:
             self.__epoch_dict["validating"][epoch] = {}
         val_epoch_entry = self.__epoch_dict["validating"][epoch]

@@ -16,6 +16,24 @@ def binary_loss_adapter(
         link_labels: torch.Tensor,
         _: torch.Tensor
 ) -> torch.Tensor:
+    """
+    Function adapter which is used to transfer the binary loss to the interface of getting 3 input tensors which is
+    necessary for the current implementation of the bpr loss function.
+
+    Parameters
+    ----------
+    link_logits : torch.Tensor
+        predicted link_logits by the model
+    link_labels : torch.Tensor
+        actual labels of the edges to predict
+    _ : torch.Tensor
+        not used in this function
+
+    Returns
+    -------
+    loss : torch.Tensor
+        Tensor containing the loss which will be used to call .backward() on it.
+    """
     return F.binary_cross_entropy_with_logits(link_logits, link_labels)
 
 
