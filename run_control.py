@@ -45,7 +45,6 @@ class RunControl:
         # set parameters for trainings iteration
         self.current_train_epoch = 0
         self.next_train_iteration = 0
-        self.iteration_len = len(self.data_object["train"])
         # initialize loss function and protocoller
         self.__initialize_loss_and_protocoller(
             self.split_mode,
@@ -118,14 +117,19 @@ class RunControl:
         else:
             # fullbatch model
             assert type(self.data_object) == torch_geometric.data.Data
-            loss = model_workspace.GNN_fullbatch_homogen_GCNConv.train(
+            loss, roc_auc = model_workspace.GNN_fullbatch_homogen_GCNConv.train_with_roc_auc(
                 model=self.model,
                 optimizer=self.optimizer,
                 data=self.data_object,
                 loss_function=self.loss_function
             )
-            # todo: soll vielleicht auch roc von train gleichzeitig messen
-            self.protocoller.register_train_data(self.current_train_epoch, loss)
+            self.protocoller.register_train_data(
+                self.current_train_epoch,
+                {
+                    "loss": float(loss),
+                    "roc_auc": roc_auc
+                }
+            )
             self.current_train_epoch += 1
         return
 

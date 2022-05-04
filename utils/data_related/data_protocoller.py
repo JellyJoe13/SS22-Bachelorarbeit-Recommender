@@ -42,7 +42,9 @@ class DataProtocoller:
     def register_train_data(
             self,
             epoch: int,
-            train_protocol: typing.Union[float, typing.Dict[str, typing.List[float]]]
+            train_protocol: typing.Union[float,
+                                         typing.Dict[str, float],
+                                         typing.Dict[int, typing.Dict[str, float]]]
     ) -> None:
         """
         Function that allows for tracking the loss of the training and allowing it for saving purposes.

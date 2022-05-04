@@ -12,6 +12,8 @@ import sys
 import os
 from datetime import datetime
 
+import utils.accuracy.accuarcy_bpr
+
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
@@ -110,8 +112,7 @@ class GNN_homogen_chemData_GCN(torch.nn.Module):
     @staticmethod
     def get_link_labels(
             pos_edge_index: torch.Tensor,
-            neg_edge_index: torch.Tensor,
-            device: torch.device
+            neg_edge_index: torch.Tensor
     ) -> torch.Tensor:
         """
         Creates and outputs a tensor with 0 and 1 entries corresponding to the positiveness or negativeness of an edge.
@@ -136,7 +137,7 @@ class GNN_homogen_chemData_GCN(torch.nn.Module):
         # calculates the length of the output tensor
         output_tensor_length = pos_edge_index.size(1) + neg_edge_index.size(1)
         # creates the output tensor with zeros
-        link_labels = torch.zeros(output_tensor_length, dtype=torch.float, device=device)
+        link_labels = torch.zeros(output_tensor_length, dtype=torch.float)
         # change the labels corresponding to positive edges to ones
         link_labels[:pos_edge_index.size(1)] = 1.
         return link_labels
@@ -190,6 +191,31 @@ def train(
     return loss
 
 
+def train_with_roc_auc(
+        model: GNN_homogen_chemData_GCN,
+        optimizer: torch.optim.Optimizer,
+        data: torch_geometric.data.Data,
+        loss_function: typing.Callable[[torch.Tensor,
+                                        torch.Tensor,
+                                        torch.Tensor], torch.Tensor] = utils.accuracy.accuarcy_bpr.binary_loss_adapter
+) -> typing.Tuple[torch.Tensor, float]:
+    # execute training
+    model.train()
+    optimizer.zero_grad()
+    link_logits = model.decode(model.encode(data), data.train_pos_edge_index, data.train_neg_edge_index)
+    link_labels = model.get_link_labels(data.train_pos_edge_index, data.train_neg_edge_index)
+    loss = loss_function(
+        link_logits,
+        link_labels,
+        torch.cat([data.train_pos_edge_index, data.train_neg_edge_index], dim=-1)
+    )
+    loss.backward()
+    optimizer.step()
+    # calculate roc auc
+    roc_auc = roc_auc_score(link_labels.cpu(), link_logits.sigmoid().cpu())
+    return loss.detach(), roc_auc
+
+
 @torch.no_grad()
 def test(
         model: GNN_homogen_chemData_GCN,
@@ -216,7 +242,7 @@ def test(
         learn to learn more about this score.
     """
     model.eval()
-    link_probs = model.decode(model.encode(),
+    link_probs = model.decode(model.encode(data),
                               data[learn_model + "_pos_edge_index"],
                               data[learn_model + "_neg_edge_index"]).sigmoid()
     link_labels = model.get_link_labels(data[learn_model + "_pos_edge_index"],
@@ -253,12 +279,16 @@ def test_with_loss(
         learn to learn more about this score.
     """
     model.eval()
-    link_logits = model.decode(model.encode(),
+    link_logits = model.decode(model.encode(data),
                                data[learn_model + "_pos_edge_index"],
                                data[learn_model + "_neg_edge_index"])
     link_labels = model.get_link_labels(data[learn_model + "_pos_edge_index"],
                                         data[learn_model + "_neg_edge_index"])
-    loss = loss_function(link_logits, link_labels)
+    loss = loss_function(
+        link_logits,
+        link_labels,
+        torch.cat([data.train_pos_edge_index, data.train_neg_edge_index], dim=-1)
+    )
     roc_auc = roc_auc_score(link_labels.cpu(), link_logits.sigmoid().cpu())
     return float(loss.detach()), roc_auc
 
