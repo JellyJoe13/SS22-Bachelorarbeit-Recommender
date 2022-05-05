@@ -37,16 +37,28 @@ def binary_loss_adapter(
     return F.binary_cross_entropy_with_logits(link_logits, link_labels)
 
 
-# todo: needs tremendous reworking as allocating way to much time and memory:
-# use log(sigmoid()) instead of softmax
-# use sum over all positive/negative scores per user and then apply sigmoid, log and mean over all users in set
-# redefine batching for using whole users if possible: sklearn GroupShuffleSplit
-# "https://github.com/guoyang9/BPR-pytorch/blob/master/main.py" used for definition of loss
 def bpr_loss_revised(
         link_logits: torch.Tensor,
         link_labels: torch.Tensor,
         edge_index: torch.Tensor
 ) -> torch.Tensor:
+    """
+    Loss for Bayesian Personalized Ranking.
+
+    Parameters
+    ----------
+    link_logits : torch.Tensor
+        score that was predicted by the model for an edge
+    link_labels : torch.Tensor
+        true score for an edge
+    edge_index : torch.Tensor
+        edge index (node connectivity information) on the edges that were predicted.
+
+    Returns
+    -------
+    bpr_loss : torch.Tensor
+        loss which is used to call .backward() from.
+    """
     user_index = edge_index.min(dim=0).values
     users = user_index.unique()
     accumulated_loss = None
