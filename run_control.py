@@ -14,6 +14,13 @@ from tqdm.auto import tqdm
 
 
 class RunControl:
+    """
+    Class used for detailed execution of model training, testing and validation.
+
+    It is recommended to only use this class for batched models as fullbatch models have proved to be possibly not
+    working to a too high memory allocation requirement in contrast to the execution of the fullbatch model in the
+    jupyter notebook.
+    """
     def __init__(
             self,
             model_id: int,
@@ -22,6 +29,22 @@ class RunControl:
             loaded_data: typing.Union[typing.Dict[str, utils.data_related.edge_batch.EdgeBatcher],
                                       torch_geometric.data.Data] = None
     ):
+        """
+        Initialize the class including the loading and preparing of data and model.
+
+        Parameters
+        ----------
+        model_id : int
+            id of the model to be loaded and used for training, testing and validation operations. ids defined in
+            model_config.py
+        split_mode : int
+            split mode for data loading
+        batch_size : int
+            size of the batch data object a.k.a. the number of edges to predict/train in the batch data objects
+        loaded_data : typing.Union[typing.Dict[str, utils.data_related.edge_batch.EdgeBatcher],
+                                   torch_geometric.data.Data]
+            in case data for this model has already been loaded it can be supplied via this parameter
+        """
         # set basic parameters
         self.protocol_dict = {}
         self.model_id = model_id
@@ -59,6 +82,24 @@ class RunControl:
             model_id: int,
             batch_size: int
     ):
+        """
+        Method to load the data of the corresponding model.
+
+        Parameters
+        ----------
+        model_loader : ModelLoader
+            model loader which is used to load the model data from
+        split_mode : int
+            split mode of the data to load
+        model_id : int
+            id of model to load the data for
+        batch_size : int
+            size of the batch data object
+
+        Returns
+        -------
+        loaded data
+        """
         return model_loader.load_model_data(
             model_id=model_id,
             do_val_split=True,
@@ -72,6 +113,22 @@ class RunControl:
             model_name: str,
             model_id: int
     ):
+        """
+        Initialize loss function and data protocoller.
+
+        Parameters
+        ----------
+        split_mode : int
+            split mode of the data; used for name giving for the protocol file
+        model_name : str
+            name of the model; used for name giving for the protocol file
+        model_id : int
+            id of the model; used for name giving for the protocol file
+
+        Returns
+        -------
+        None
+        """
         # fetch loss
         loss_name, loss_function = self.model_loader.get_loss_function(self.model_id)
         self.loss_function = loss_function
@@ -80,11 +137,25 @@ class RunControl:
                + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         # initialize protocoller
         self.protocoller = DataProtocoller(name, loss_name, model_id)
+        return
 
     def do_train_step(
             self,
             num_step: int
     ):
+        """
+        Function used for execute a training step which includes the partial execution of training iterations for an
+        epoch with num_step iterations being executed.
+
+        Parameters
+        ----------
+        num_step : int
+            number of training iterations being carried out
+
+        Returns
+        -------
+        None
+        """
         if self.model_loader.is_batched(self.model_id):
             # determine length for for loop
             end_iteration = self.next_train_iteration + num_step
@@ -136,6 +207,13 @@ class RunControl:
     def do_val_test(
             self
     ):
+        """
+        Function used to carry out a validation operating measuring the loss and roc auc of the validation dataset.
+
+        Returns
+        -------
+        None
+        """
         if self.model_loader.is_batched(self.model_id):
             val_batcher = self.data_object["val"]
             loss, roc_auc = run_tools.test_model_basic(
@@ -167,6 +245,13 @@ class RunControl:
     def do_test_test(
             self
     ):
+        """
+        Function used to carry out a testing operating measuring the loss and roc auc of the test dataset.
+
+        Returns
+        -------
+        None
+        """
         if self.model_loader.is_batched(self.model_id):
             # model is batched
             test_batcher = self.data_object["test"]
@@ -197,6 +282,14 @@ class RunControl:
         return
 
     def do_full_test(self):
+        """
+        Function used to carry out a full test operation measuring the accuracy scores and creating a ROC plot that
+        will be saved to a svd file by default.
+
+        Returns
+        -------
+        None
+        """
         if self.model_loader.is_batched(self.model_id):
             precision, recall = run_tools.test_model_advanced(
                 model=self.model,
@@ -222,6 +315,18 @@ class RunControl:
             self,
             val_test_frequency: int
     ):
+        """
+        Function used to execute all the necessary operations for a whole epoch.
+
+        Parameters
+        ----------
+        val_test_frequency : int
+            determines after how many train iterations a test on the validation and test set will be carried out.
+
+        Returns
+        -------
+        None
+        """
         if self.model_loader.is_batched(self.model_id):
             assert val_test_frequency > 0
             # for loop over train batcher
@@ -242,6 +347,21 @@ class RunControl:
             val_test_frequency: int,
             max_epochs: int
     ):
+        """
+        Function used to execute a whole experiment for the loaded model, data and settings in general. Also saves the
+        tracked data at the end of each epoch to the json output file.
+
+        Parameters
+        ----------
+        val_test_frequency : int
+            determines after how many train iterations a test on the validation and test set will be carried out.
+        max_epochs : int
+            determines the maximal number of epochs that will be run in the experiment.
+
+        Returns
+        -------
+        None
+        """
         self.do_full_test()
         self.do_val_test()
         self.do_test_test()
@@ -251,4 +371,11 @@ class RunControl:
         return
 
     def save_protocoll(self):
+        """
+        Function that saves the collected data to a json file.
+
+        Returns
+        -------
+        None
+        """
         self.protocoller.save_to_file("experimental_results")
