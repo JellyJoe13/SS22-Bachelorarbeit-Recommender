@@ -247,6 +247,7 @@ class RunControl:
         self.do_test_test()
         for epoch in tqdm(range(max_epochs)):
             self.run_epoch(val_test_frequency)
+            self.save_protocoll()
         return
 
     def save_protocoll(self):
