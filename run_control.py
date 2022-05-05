@@ -1,5 +1,6 @@
 import typing
 
+import numpy as np
 import torch
 import torch_geometric.data
 
@@ -379,3 +380,30 @@ class RunControl:
         None
         """
         self.protocoller.save_to_file("experimental_results")
+        return
+
+    @torch.no_grad()
+    def predict_edges(
+            self,
+            molecule_ids: np.ndarray,
+            experiment_ids: np.ndarray
+    ) -> np.ndarray:
+        transformed_edges = utils.data_related.data_gen.convert_edges(
+            cid=molecule_ids,
+            aid=experiment_ids,
+            data_mode=self.model_loader.get_data_mode(self.model_id)
+        )
+        if self.model_loader.is_batched(self.model_id):
+            original_data = self.data_object["train"].original_data
+            # todo: check for correctness
+            logits = []
+            for idx_start in range(0, transformed_edges.size(1), self.data_object["train"].num_selection_edges):
+                idx_end = idx_start + self.data_object["train"].num_selection_edges
+                if idx_end > transformed_edges.size(1):
+                    idx_end = transformed_edges.size(1)
+                logits.append(self.model.fit_predict(
+                    original_data.x.to(self.device),
+                    transformed_edges[:, idx_start:idx_end].to(self.device),
+                    original_data.train_pos_edge_index.to(self.device)
+                ).sigmoid().detach().cpu().numpy())
+            return np.concatenate(logits)

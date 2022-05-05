@@ -236,6 +236,24 @@ class ModelLoader:
             },
         }
 
+    def get_data_mode(
+            self,
+            model_id: int
+    ) -> int:
+        """
+        Function that returns the data mode of the model.
+
+        Parameters
+        ----------
+        model_id : int
+            Model id of which to poll the data_mode
+
+        Returns
+        -------
+        data_mode : int
+        """
+        return self.model_settings_dict[model_id]["data_mode"]
+
     def should_execute_esc(
             self,
             model_id: int
