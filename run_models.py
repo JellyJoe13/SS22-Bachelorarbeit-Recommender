@@ -1,9 +1,7 @@
-# todo: write whole execution scheme of epochs.... centralized for all models - partly finished II
-# todo: add validation data_related - control necessary
-# todo: early stopping - control necessary
-# todo: measure overfitting with steffen things
-# todo: setup models
-# todo: check surpriselib working
+"""
+Deprecated.
+"""
+
 
 # import section
 import typing
