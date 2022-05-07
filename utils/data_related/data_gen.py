@@ -92,19 +92,40 @@ def pandas_to_GNN_pyg_edges_v2(
                                                                                      dtype=torch.long)
 
 
+def subset_x_handler(
+        chem_desc: np.ndarray,
+        cid_dict: dict,
+        aid_count: int
+) -> np.ndarray:
+    # WARNING - STATIC PARAMETER FOR SPECIFIC DATASET
+    whole_dataset_aid_count = 2481
+    # acquire molecule count
+    cid_count = len(cid_dict)
+    # initialize array
+    data = np.zeros(x=np.zeros(shape=((aid_count + cid_count), chem_desc.shape[1])))
+    # get which cid's to put in data
+    cid_keys = list(set(cid_dict.keys()))
+    for key, value in cid_dict.items():
+        data[aid_count + value, :] = chem_desc[whole_dataset_aid_count + key, :]
+    return data
+
+
 def smiles_and_rdkit_chem_param_generation(
         df: pandas.DataFrame,
         aid_count: int,
         cid_count: int,
         cid_translation_dictionary: dict,
         generate: bool = True,
-        empty_GNN_x: int = 0
+        empty_GNN_x: int = 0,
+        full_data: bool = True
 ) -> torch.Tensor:
     """
     Function used to generate the chemical descriptor data_related used as the node tensor in the GNN
 
     Parameters
     ----------
+    full_data : bool
+        determines if the full dataset is loaded or only a part of it
     df : pandas.DataFrame
         pandas dataframe : Input data_related which contains the SMILES data_related of the molecules to transform
     aid_count : int
@@ -139,6 +160,8 @@ def smiles_and_rdkit_chem_param_generation(
         load_path1 = os.path.join(path_top_dir, "data", "descriptors_x_transformed2.csv")
         if exists(load_path1):
             load_x = np.nan_to_num(np.loadtxt(load_path1, delimiter=","), nan=0)
+            if not full_data:
+                load_x = subset_x_handler(load_x, cid_translation_dictionary, aid_count)
             return torch.tensor(load_x, dtype=torch.float)
         # if the chemical descriptor file does not exist, generate and save it (as it takes 1h52 to compute it
         load_path2 = os.path.join(path_top_dir, "data", "descriptors_x.csv")
@@ -159,7 +182,7 @@ def smiles_and_rdkit_chem_param_generation(
             # transform and scale the chemical descriptors so that they can be used in the GNN
             # without generating NaN or Inf
             # values
-            x = transform_and_scale_x_data(save_to_file=True,
+            x = transform_and_scale_x_data(save_to_file=full_data,
                                            saving_path=load_path1,
                                            already_loaded_array=x)
             return torch.tensor(x, dtype=torch.float)
@@ -168,6 +191,8 @@ def smiles_and_rdkit_chem_param_generation(
             data = transform_and_scale_x_data(save_to_file=True,
                                               saving_path=load_path1,
                                               path=load_path2)
+            if not full_data:
+                data = subset_x_handler(data, cid_translation_dictionary, aid_count)
             # turn it into a torch tensor and return it
             return torch.tensor(data, dtype=torch.float)
     else:
