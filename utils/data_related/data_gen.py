@@ -156,6 +156,13 @@ def smiles_and_rdkit_chem_param_generation(
         # Modus where rdkit is used to generate the descriptors. any empty_GNN_x is ignored (currently)
         # Note: this is very time-consuming so that the pre-generated x is stored in a csv file in the data_related
         # folder.
+        # Special efficiency addition for using pandas to load csv as faster than numpy
+        load_path_pandas = os.path.join(path_top_dir, "data", "descriptors_x_transformed_pandas.csv")
+        if exists(load_path_pandas):
+            load_x = np.nan_to_num(pd.read_csv(load_path_pandas).to_numpy(), nan=0)
+            if not full_data:
+                load_x = subset_x_handler(load_x, cid_translation_dictionary, aid_count)
+            return torch.tensor(load_x, dtype=torch.float)
         # if the file exists we load it from there
         load_path1 = os.path.join(path_top_dir, "data", "descriptors_x_transformed2.csv")
         if exists(load_path1):
