@@ -65,7 +65,7 @@ class RunControl:
         if loaded_data:
             self.data_object = loaded_data
         else:
-            self.data_object = self.__load_data(self.model_loader, split_mode, model_id, batch_size)
+            self.data_object, self.data_info = self.__load_data(self.model_loader, split_mode, model_id, batch_size)
         # set parameters for trainings iteration
         self.current_train_epoch = 0
         self.next_train_iteration = 0
@@ -388,22 +388,29 @@ class RunControl:
             molecule_ids: np.ndarray,
             experiment_ids: np.ndarray
     ) -> np.ndarray:
-        transformed_edges = utils.data_related.data_gen.convert_edges(
+        # transform numpy input information on which molecule-experiment pair to predict to torch tensor
+        transformed_edges = self.data_info.create_mapped_edges(
             cid=molecule_ids,
-            aid=experiment_ids,
-            data_mode=self.model_loader.get_data_mode(self.model_id)
+            aid=experiment_ids
         )
+        # if model is batched (and cuda should be applied) split edges to predict in batch_size sizes
         if self.model_loader.is_batched(self.model_id):
+            # shortcut for original data link
             original_data = self.data_object["train"].original_data
             # todo: check for correctness
+            # initialize logits
             logits = []
+            # iterate over subsets of edges to predict
             for idx_start in range(0, transformed_edges.size(1), self.data_object["train"].num_selection_edges):
+                # calculate starting index and end index of edge subset
                 idx_end = idx_start + self.data_object["train"].num_selection_edges
                 if idx_end > transformed_edges.size(1):
                     idx_end = transformed_edges.size(1)
+                # create prediction and append result to list
                 logits.append(self.model.fit_predict(
                     original_data.x.to(self.device),
                     transformed_edges[:, idx_start:idx_end].to(self.device),
                     original_data.train_pos_edge_index.to(self.device)
                 ).sigmoid().detach().cpu().numpy())
+            # fuze and return
             return np.concatenate(logits)

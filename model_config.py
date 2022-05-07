@@ -489,8 +489,8 @@ class ModelLoader:
         if self.is_pytorch(model_id):
             # load the data_related from storage and with datamode and splitmode
             print("data fetching")
-            data, id_breakpoint = data_transform_split(data_mode=self.model_settings_dict[model_id]["data_mode"],
-                                                       split_mode=split_mode)
+            data, data_info_handler = data_transform_split(data_mode=self.model_settings_dict[model_id]["data_mode"],
+                                                           split_mode=split_mode)
             # processing of train data_related if we should generate a val dataset
             print("val splitting if enabled")
             if do_val_split:
@@ -522,13 +522,13 @@ class ModelLoader:
                                               mode="val")
                 # return the three batchers using a dict to not confuse the batchers with each other.
                 return {
-                    "train": train_batcher,
-                    "test": test_batcher,
-                    "val": val_batcher
-                }
+                           "train": train_batcher,
+                           "test": test_batcher,
+                           "val": val_batcher
+                       }, data_info_handler
             else:
                 # fullbatch mode
-                return data
+                return data, data_info_handler
         else:
             # surpriselib part
             return data_transform_split(0, split_mode)

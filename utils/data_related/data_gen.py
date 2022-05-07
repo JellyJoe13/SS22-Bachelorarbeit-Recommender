@@ -14,6 +14,7 @@ from rdkit.Chem import Descriptors, MolFromSmiles
 import os
 from os.path import exists
 from .x_data_transform import transform_and_scale_x_data
+from .data_info import DataInfoHandler
 
 
 def pandas_to_GNN_pyg_edges(df, cid_translation_dictionary: dict, aid_translation_dictionary: dict):
@@ -196,7 +197,8 @@ def data_transform_split(
     ----------
     data_mode : int
         defines if the desired output is a surprise data_related package (0) or the torch_geometric data_related
-        (1 without rdkit information; 2 with)
+        (1 without rdkit information; 2 with). New addition: small data mode for testing: 3 (without data) or 4 (with
+        data)
     split_mode : str
         path and filename of the csv containing the chemistry dataset
     path : str
@@ -226,6 +228,19 @@ def data_transform_split(
     assert empty_GNN_x >= 0
     # import data_related
     df = pd.read_csv(path)
+    # TESTING DATA ADDITION SECTION
+    # if data mode 3 or 4 reduce dataset to a part of loaded data:
+    if data_mode == 3 or data_mode == 4:
+        # select subset of original subset and set df parameter so that further code works with smaller set
+        selection = df.groupby(by="aid").size() > 300000
+        selection = df.groupby(by="aid").size()[selection]
+        df = df[df.aid.isin(selection.keys())]
+        selection = df.groupby(by="cid").size() > (df.aid.nunique() * 0.9)
+        selection = df.groupby(by='cid').size()[selection]
+        df = df[df.cid.isin(selection.keys())]
+        # set datamode to normal values for normal resuming of computation
+        data_mode -= 2
+    # TRAIN TEST SPLITTING SECTION
     # define empty split variable for differing split types of groupwise and randomwise splitting
     split = None
     # separation of split methods
@@ -293,4 +308,8 @@ def data_transform_split(
                                                    generate=(data_mode == 2), empty_GNN_x=empty_GNN_x)
         data = Data(x=x, train_pos_edge_index=train_pos_edge_index, train_neg_edge_index=train_neg_edge_index,
                     test_pos_edge_index=test_pos_edge_index, test_neg_edge_index=test_neg_edge_index)
-        return data, aid_count
+        # generate Data Info handler
+        data_info = DataInfoHandler(id_breakpoint=aid_count,
+                                    molecule_dict=cid_translation_dictionary,
+                                    experiment_dict=aid_translation_dictionary)
+        return data, data_info
