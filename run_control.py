@@ -28,13 +28,16 @@ class RunControl:
             split_mode: int = 0,
             batch_size: int = 1000000,
             loaded_data: typing.Union[typing.Dict[str, utils.data_related.edge_batch.EdgeBatcher],
-                                      torch_geometric.data.Data] = None
+                                      torch_geometric.data.Data] = None,
+            test_mode: bool = False
     ):
         """
         Initialize the class including the loading and preparing of data and model.
 
         Parameters
         ----------
+        test_mode : bool
+            defines whether the mini-data-set or the large data-set shall be loaded
         model_id : int
             id of the model to be loaded and used for training, testing and validation operations. ids defined in
             model_config.py
@@ -47,6 +50,7 @@ class RunControl:
             in case data for this model has already been loaded it can be supplied via this parameter
         """
         # set basic parameters
+        self.test_mode = test_mode
         self.protocol_dict = {}
         self.model_id = model_id
         self.batch_size = batch_size
@@ -65,7 +69,13 @@ class RunControl:
         if loaded_data:
             self.data_object = loaded_data
         else:
-            self.data_object, self.data_info = self.__load_data(self.model_loader, split_mode, model_id, batch_size)
+            self.data_object, self.data_info = self.__load_data(
+                self.model_loader,
+                split_mode,
+                model_id,
+                batch_size,
+                self.test_mode
+            )
         # set parameters for trainings iteration
         self.current_train_epoch = 0
         self.next_train_iteration = 0
@@ -81,13 +91,17 @@ class RunControl:
             model_loader: ModelLoader,
             split_mode: int,
             model_id: int,
-            batch_size: int
+            batch_size: int,
+            test_mode: bool = False
     ):
         """
         Method to load the data of the corresponding model.
 
         Parameters
         ----------
+        test_mode : bool
+            specifies whether the mini dataset or the full dataset shall be loaded from disk in case of pytorch data
+            option
         model_loader : ModelLoader
             model loader which is used to load the model data from
         split_mode : int
@@ -105,7 +119,8 @@ class RunControl:
             model_id=model_id,
             do_val_split=True,
             split_mode=split_mode,
-            num_selection_edges_batching=batch_size
+            num_selection_edges_batching=batch_size,
+            test_mode=test_mode
         )
 
     def __initialize_loss_and_protocoller(

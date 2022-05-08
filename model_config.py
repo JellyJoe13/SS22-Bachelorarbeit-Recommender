@@ -449,7 +449,8 @@ class ModelLoader:
             model_id: int,
             do_val_split: bool = False,
             split_mode: int = 0,
-            num_selection_edges_batching: int = 100000
+            num_selection_edges_batching: int = 100000,
+            test_mode: bool = False
     ) -> typing.Union[typing.Dict[int, EdgeBatcher],
                       torch_geometric.data.Data,
                       typing.Tuple[surprise.trainset.Trainset, list]]:
@@ -459,6 +460,8 @@ class ModelLoader:
 
         Parameters
         ----------
+        test_mode : bool
+            specifies whether mini dataseet or full dataset shall be loaded from disk in case of pytorch data option
         num_selection_edges_batching : int
             Number of edges in each batch object
         model_id : int
@@ -489,7 +492,12 @@ class ModelLoader:
         if self.is_pytorch(model_id):
             # load the data_related from storage and with datamode and splitmode
             print("data fetching")
-            data, data_info_handler = data_transform_split(data_mode=self.model_settings_dict[model_id]["data_mode"],
+            # if mode is of pytorch then include logic of whether to load full or test dataset
+            data_mode = self.model_settings_dict[model_id]["data_mode"]
+            if test_mode and 0 < data_mode < 3:
+                data_mode += 2
+            # load data and data_info_handler
+            data, data_info_handler = data_transform_split(data_mode=data_mode,
                                                            split_mode=split_mode)
             # processing of train data_related if we should generate a val dataset
             print("val splitting if enabled")
