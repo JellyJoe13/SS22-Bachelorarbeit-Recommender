@@ -426,10 +426,10 @@ class ModelLoader:
             trainset and valset that have been split
         """
         # check if graph undirected or directed
-        is_directed = True
+        is_undirected = False
         dir_edge_index = EdgeConvolutionBatcher.remove_undirected_duplicate_edge(edge_index)
-        if dir_edge_index.size(1) == int(edge_index.size(0) / 2):
-            is_directed = False
+        if dir_edge_index.size(1) == int(edge_index.size(1) / 2):
+            is_undirected = True
             edge_index = dir_edge_index
         else:
             del dir_edge_index
@@ -439,7 +439,7 @@ class ModelLoader:
         choosing_border = int(percentage * edge_index.size(1))
         train_set = edge_index[:, index[choosing_border:]]
         val_set = edge_index[:, index[:choosing_border]]
-        if is_directed:
+        if is_undirected:
             train_set = torch.cat([train_set, train_set[[1, 0]]], dim=-1)
             val_set = torch.cat([val_set, val_set[[1, 0]]], dim=-1)
         return train_set, val_set

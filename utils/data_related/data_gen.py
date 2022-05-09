@@ -255,7 +255,7 @@ def data_transform_split(
     assert split_mode <= 2
     # assert data_mode is within accepted range
     assert data_mode >= 0
-    assert data_mode <= 2
+    assert data_mode <= 4
     # assert for empty_GNN_x
     assert empty_GNN_x >= 0
     # import data_related
