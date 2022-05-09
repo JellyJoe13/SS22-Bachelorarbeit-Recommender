@@ -155,9 +155,33 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "bpr"
             },
+            # - pytorch homogen minibatch LGConv-2 binary
+            15: {
+                "model": 3,
+                "num_features_input": 205,
+                "number_convolutions": 1,
+                "data_mode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary"
+            },
+            # - pytorch homogen minibatch LGConv-2 bpr
+            16: {
+                "model": 3,
+                "num_features_input": 205,
+                "number_convolutions": 2,
+                "data_mode": 2,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "bpr"
+            },
             # new models
             # - pytorch homogen minibatch GATConv-1 binaryloss
-            15: {
+            20: {
                 "model": 4,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -170,7 +194,7 @@ class ModelLoader:
                 "loss": "binary"
             },
             # - pytorch homogen minibatch GATConv-0 binaryloss
-            16: {
+            21: {
                 "model": 4,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -183,7 +207,7 @@ class ModelLoader:
                 "loss": "binary"
             },
             # - pytorch homogen minibatch SAGEConv-1 binaryloss
-            17: {
+            30: {
                 "model": 5,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -196,7 +220,7 @@ class ModelLoader:
                 "loss": "binary"
             },
             # - pytorch homogen minibatch SAGEConv-0 binaryloss
-            18: {
+            31: {
                 "model": 5,
                 "num_features_input": 205,
                 "num_features_output": 64,
@@ -208,21 +232,9 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "binary"
             },
-            # - pytorch homogen minibatch LGConv-2 binaryloss
-            19: {
-                "model": 3,
-                "num_features_input": 205,
-                "number_convolutions": 2,
-                "data_mode": 2,
-                "esc": True,
-                "is_pytorch": True,
-                "cuda_enabled": True,
-                "is_batched": True,
-                "loss": "binary"
-            },
-            # THIRTY SECTION - MINIBATCH-NODATA
+            # 100 SECTION - MINIBATCH-NODATA
             # - pytorch homogen minibatch GCNConv-0 binaryloss
-            30: {
+            100: {
                 "model": 1,
                 "num_features_input": 205,
                 "num_features_output": 64,
