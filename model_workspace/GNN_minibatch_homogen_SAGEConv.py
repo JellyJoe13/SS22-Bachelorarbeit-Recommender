@@ -1,5 +1,6 @@
 import torch.nn
 import torch_geometric.nn.conv
+from torch_geometric.nn import Linear
 
 
 class GNN_SAGEConv_homogen(torch.nn.Module):
@@ -21,8 +22,9 @@ class GNN_SAGEConv_homogen(torch.nn.Module):
         num_features_hidden : int
             number of hidden features for each node
         """
+        super(GNN_SAGEConv_homogen, self).__init__()
         self.mode = num_features_hidden > 0
-        self.input_weighting = torch.nn.Linear(num_features_input, num_features_input)
+        self.input_weighting = Linear(num_features_input, num_features_input)
         if self.mode:
             self.conv1 = torch_geometric.nn.conv.SAGEConv(num_features_input, num_features_hidden)
             self.conv2 = torch_geometric.nn.conv.SAGEConv(num_features_hidden, num_features_out)
