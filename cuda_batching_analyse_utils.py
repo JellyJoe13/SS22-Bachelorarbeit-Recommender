@@ -26,7 +26,7 @@ def max_subset_size(
         parameter defining if a previous run with this tool was executed and what the largest confirmed size was so that
         the increase is not exponential but linear.
     start_size : int
-        define with with size the tool with start with for the exponential testing of batch size
+        define with size the tool with start with for the exponential testing of batch size
 
     Returns
     -------
