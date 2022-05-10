@@ -1,5 +1,6 @@
 import torch.nn
 import torch_geometric.nn
+from torch_geometric.nn import Linear
 
 
 class GNN_GCNConv_homogen_basic(torch.nn.Module):
@@ -22,7 +23,7 @@ class GNN_GCNConv_homogen_basic(torch.nn.Module):
             number of parameters in the embedding for each node
         """
         super(GNN_GCNConv_homogen_basic, self).__init__()
-        self.init_linear = torch.nn.Linear(num_features_input, num_features_input)
+        self.init_linear = Linear(num_features_input, num_features_input)
         self.conv = torch_geometric.nn.GCNConv(num_features_input, num_features_out)
 
     def fit_predict(

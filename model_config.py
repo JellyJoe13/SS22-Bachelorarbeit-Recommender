@@ -242,7 +242,7 @@ class ModelLoader:
                 "is_pytorch": True,
                 "cuda_enabled": True,
                 "is_batched": True,
-                "loss": "binary"
+                "loss": "bpr"
             },
             # - pytorch homogen minibatch SAGEConv-1 binaryloss
             30: {
