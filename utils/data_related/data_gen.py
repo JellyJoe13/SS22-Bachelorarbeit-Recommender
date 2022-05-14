@@ -231,9 +231,9 @@ def data_transform_split(
         defines if the desired output is a surprise data_related package (0) or the torch_geometric data_related
         (1 without rdkit information; 2 with). New addition: small data mode for testing: 3 (without data) or 4 (with
         data)
-    split_mode : str
-        path and filename of the csv containing the chemistry dataset
     path : str
+        path and filename of the csv containing the chemistry dataset
+    split_mode : str
         determines which split mode is used: 0=random split entries, 1=molecule-wise, 2=assay-wise
     empty_GNN_x : int
         defines if data_mode==1 how many x-dimension each node should have in the pyg dataset
