@@ -157,7 +157,7 @@ def smiles_and_rdkit_chem_param_generation(
         # Note: this is very time-consuming so that the pre-generated x is stored in a csv file in the data_related
         # folder.
         # Special efficiency addition for using pandas to load csv as faster than numpy
-        load_path_pandas = os.path.join(path_top_dir, "data", "descriptors_x_transformed_compressed.pkl")
+        load_path_pandas = os.path.join(path_top_dir, "data", "descriptors_x_transformed_compressed2.pkl")
         if exists(load_path_pandas):
             load_x = pd.read_pickle(load_path_pandas, compression="bz2").to_numpy()
             if not full_data:
@@ -167,6 +167,8 @@ def smiles_and_rdkit_chem_param_generation(
         load_path1 = os.path.join(path_top_dir, "data", "descriptors_x_transformed2.csv")
         if exists(load_path1):
             load_x = np.nan_to_num(np.loadtxt(load_path1, delimiter=","), nan=0)
+            # addition for fixing experiment data
+            load_x[:2481] = np.random.rand(2481, 205)
             if not full_data:
                 load_x = subset_x_handler(load_x, cid_translation_dictionary, aid_count)
             return torch.tensor(load_x, dtype=torch.float)
@@ -192,12 +194,16 @@ def smiles_and_rdkit_chem_param_generation(
             x = transform_and_scale_x_data(save_to_file=full_data,
                                            saving_path=load_path1,
                                            already_loaded_array=x)
+            # addition for fixing experiment data
+            x[:2481] = np.random.rand(2481, 205)
             return torch.tensor(x, dtype=torch.float)
         else:
             # chemical descriptor csv exists but transformed version doesn't, so load it and save the generated array
             data = transform_and_scale_x_data(save_to_file=True,
                                               saving_path=load_path1,
                                               path=load_path2)
+            # addition for fixing experiment data
+            data[:2481] = np.random.rand(2481, 205)
             if not full_data:
                 data = subset_x_handler(data, cid_translation_dictionary, aid_count)
             # turn it into a torch tensor and return it
