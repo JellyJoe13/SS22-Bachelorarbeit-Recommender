@@ -171,7 +171,7 @@ class ModelLoader:
             15: {
                 "model": 3,
                 "num_features_input": 205,
-                "number_convolutions": 1,
+                "number_convolutions": 2,
                 "data_mode": 2,
                 "esc": True,
                 "is_pytorch": True,
