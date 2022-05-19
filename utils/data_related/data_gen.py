@@ -230,7 +230,7 @@ def data_transform_split(
     data_mode : int
         defines if the desired output is a surprise data_related package (0) or the torch_geometric data_related
         (1 without rdkit information; 2 with). New addition: small data mode for testing: 3 (without data) or 4 (with
-        data)
+        data); data_mode 5 indicates the surpriselib loading of the small data package
     path : str
         path and filename of the csv containing the chemistry dataset
     split_mode : str
@@ -255,14 +255,14 @@ def data_transform_split(
     assert split_mode <= 2
     # assert data_mode is within accepted range
     assert data_mode >= 0
-    assert data_mode <= 4
+    assert data_mode <= 5
     # assert for empty_GNN_x
     assert empty_GNN_x >= 0
     # import data_related
     df = pd.read_csv(path)
     # TESTING DATA ADDITION SECTION
     # if data mode 3 or 4 reduce dataset to a part of loaded data:
-    if data_mode == 3 or data_mode == 4:
+    if data_mode == 3 or data_mode == 4 or data_mode == 5:
         # select subset of original subset and set df parameter so that further code works with smaller set
         selection = df.groupby(by="aid").size() > 300000
         selection = df.groupby(by="aid").size()[selection]
@@ -271,7 +271,10 @@ def data_transform_split(
         selection = df.groupby(by='cid').size()[selection]
         df = df[df.cid.isin(selection.keys())]
         # set datamode to normal values for normal resuming of computation
-        data_mode -= 2
+        if data_mode == 5:
+            data_mode = 0
+        else:
+            data_mode -= 2
     # TRAIN TEST SPLITTING SECTION
     # define empty split variable for differing split types of groupwise and randomwise splitting
     split = None
