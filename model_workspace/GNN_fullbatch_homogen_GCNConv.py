@@ -356,7 +356,7 @@ def full_test(
     )
     print("precision:", precision, "\nrecall:", recall)
     # create file name for plot
-    file_name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \
+    file_name = "Split-" + str(split_mode) + "_" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \
                 + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     # plot ROC CURVE
     calc_ROC_curve(link_labels,

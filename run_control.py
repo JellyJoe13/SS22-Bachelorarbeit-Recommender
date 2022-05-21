@@ -324,7 +324,7 @@ class RunControl:
                 epoch=self.current_train_epoch,
                 split_mode=self.split_mode
             )
-            self.protocoller.register_precision_recall(precision, recall)
+            self.protocoller.register_precision_recall(self.current_train_epoch, precision, recall)
         return
 
     def run_epoch(
