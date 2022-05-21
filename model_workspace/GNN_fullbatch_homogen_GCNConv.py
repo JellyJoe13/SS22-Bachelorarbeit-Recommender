@@ -234,7 +234,7 @@ def train_with_roc_auc(
     loss.backward()
     optimizer.step()
     # calculate roc auc
-    roc_auc = roc_auc_score(link_labels.cpu(), link_logits.sigmoid().cpu())
+    roc_auc = roc_auc_score(link_labels.cpu(), link_logits.sigmoid().detach().cpu())
     return loss.detach(), roc_auc
 
 
@@ -344,7 +344,7 @@ def full_test(
     Nothing, but plots roc curve and prints accuracy values
     """
     model.eval()
-    link_logits = model.decode(model.encode(), data.test_pos_edge_index, data.test_neg_edge_index)
+    link_logits = model.decode(model.encode(data), data.test_pos_edge_index, data.test_neg_edge_index)
     print(link_logits)
     link_labels = model.get_link_labels(data.test_pos_edge_index, data.test_neg_edge_index)
     # compute recall and precision
