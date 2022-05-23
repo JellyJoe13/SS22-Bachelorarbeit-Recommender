@@ -310,6 +310,44 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "binary"
             },
+            # - pytorch homogen minibatch LGConv-1 binaryloss
+            101: {
+                "model": 3,
+                "num_features_input": 205,
+                "number_convolutions": 1,
+                "data_mode": 1,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary"
+            },
+            # - pytorch homogen minibatch GATConv-0 binaryloss
+            102: {
+                "model": 4,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 0,
+                "data_mode": 1,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary"
+            },
+            # - pytorch homogen minibatch SAGEConv-0 binaryloss
+            103: {
+                "model": 5,
+                "num_features_input": 205,
+                "num_features_output": 64,
+                "num_features_hidden": 0,
+                "data_mode": 1,
+                "esc": True,
+                "is_pytorch": True,
+                "cuda_enabled": True,
+                "is_batched": True,
+                "loss": "binary"
+            },
         }
 
     def get_data_mode(
