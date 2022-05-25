@@ -207,9 +207,13 @@ def smiles_and_rdkit_chem_param_generation(
         if empty_GNN_x <= 0:
             # in this case the number of parameters shall be the same as the number of descriptors.
             num_node_features = 205
+            # All values are set to random
+            return torch.rand((aid_count + cid_count), num_node_features, dtype=torch.float)
             # All values are set to 1
             return torch.tensor(np.ones(shape=((aid_count + cid_count), num_node_features)), dtype=torch.float)
         else:
+            # All values are set to random
+            return torch.rand((aid_count + cid_count), empty_GNN_x, dtype=torch.float)
             # this means a specific amount is set, it will generate this specific number of parameters for each node
             return torch.tensor(np.ones(shape=((aid_count + cid_count), empty_GNN_x)), dtype=torch.float)
 
