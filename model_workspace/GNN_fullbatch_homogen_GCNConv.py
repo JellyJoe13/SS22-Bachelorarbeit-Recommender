@@ -344,7 +344,7 @@ def full_test(
     Nothing, but plots roc curve and prints accuracy values
     """
     model.eval()
-    link_logits = model.decode(model.encode(), data.test_pos_edge_index, data.test_neg_edge_index)
+    link_logits = model.decode(model.encode(data), data.test_pos_edge_index, data.test_neg_edge_index)
     print(link_logits)
     link_labels = model.get_link_labels(data.test_pos_edge_index, data.test_neg_edge_index)
     # compute recall and precision
@@ -356,7 +356,7 @@ def full_test(
     )
     print("precision:", precision, "\nrecall:", recall)
     # create file name for plot
-    file_name = "Split-" + str(split_mode) + "/" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \
+    file_name = "Split-" + str(split_mode) + "_" + model.get_name() + "-" + str(model_id) + "_epoch-" + str(epoch) \
                 + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     # plot ROC CURVE
     calc_ROC_curve(link_labels,
