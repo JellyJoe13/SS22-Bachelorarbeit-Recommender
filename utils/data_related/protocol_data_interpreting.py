@@ -172,7 +172,7 @@ class DataInterpreter:
             plt.plot(val_loss.keys(), val_loss.values(), 'x-', label="val")
             plt.title("Tracked ROC AUC scores")
             plt.xlabel("total iterations")
-            plt.ylabel("ROC AUC value")
+            plt.ylabel("score")
             plt.legend()
             for epoch in epoch_mapping:
                 plt.axvline(x=epoch, label="epochs", linestyle=':', color='lightgray')
@@ -192,7 +192,7 @@ class DataInterpreter:
             plt.plot(val_loss.keys(), val_loss.values(), 'x-', label="val")
             plt.title("Tracked ROC AUC scores")
             plt.xlabel("epochs")
-            plt.ylabel("ROC AUC value")
+            plt.ylabel("score")
             plt.legend()
             plt.show()
             return
@@ -217,6 +217,6 @@ class DataInterpreter:
         plt.legend()
         plt.title("Accuracy scores")
         plt.xlabel("epochs")
-        plt.ylabel("value of accuracy scores")
+        plt.ylabel("score")
         plt.show()
         return
