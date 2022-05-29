@@ -35,7 +35,7 @@ def calc_ROC_curve(
     """
     # calculate the tpr and fpr using the function from sklearn
     false_positive_rate, true_positive_rate, _ = sklearn.metrics.roc_curve(link_labels.cpu().numpy(),
-                                                                           link_logits.sigmoid().detach().cpu().numpy())
+                                                                           link_logits.sigmoid().cpu().numpy())
     # calculate the ROC AUC (area under curve) to put it into the graph as well
     roc_auc = sklearn.metrics.auc(false_positive_rate, true_positive_rate)
     # plot the ROC CURVE
