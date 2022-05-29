@@ -183,7 +183,7 @@ class DataInterpreter:
             train_loss = dict(zip(self.data_store["training"].keys(),
                                   [i["roc_auc"] for i in self.data_store["training"].values()]))
             val_loss = dict(zip(self.data_store["validating"].keys(),
-                                [i["roc_auc"] for i in self.data_store["validating"].values()]))
+                                [i["0"]["roc_auc"] for i in self.data_store["validating"].values()]))
             test_loss = dict(zip(self.data_store["testing"].keys(),
                                  [i["roc_auc"] for i in self.data_store["testing"].values()]))
             fig = plt.figure(0)
