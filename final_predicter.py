@@ -11,6 +11,7 @@ from tqdm.auto import tqdm
 import numpy as np
 
 
+# todo: test run on GPU system
 class RecommenderBScUrban:
     """
     Recommender that contains the best model determined in the bachelor thesis.
@@ -33,9 +34,7 @@ class RecommenderBScUrban:
         assert batch_size > 0
         self.batch_size = batch_size
         self.__load_data(data_path, batch_size)
-        self.__prepare_model()
-        self.__prepare_loss_function()
-        self.__initialize_environment()
+        self.__prepare_recommender_setup()
 
     def __load_data(self, data_path, batch_size):
         data, self.data_handler = data_transform_split(
@@ -55,17 +54,11 @@ class RecommenderBScUrban:
         )
         return
 
-    def __prepare_model(self):
-        self.model = GNN_GCNConv_homogen_basic(205, 64)
-        return
-
-    def __prepare_loss_function(self):
-        self.loss_function = bpr_loss_revised
-        return
-
-    def __initialize_environment(self):
+    def __prepare_recommender_setup(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model = GNN_GCNConv_homogen_basic(205, 64).to(self.device)
         self.optimizer = torch.optim.Adam(params=self.model.parameters())
+        self.loss_function = bpr_loss_revised
         return
 
     def initialize(self, epoch: int = 25):
@@ -132,9 +125,9 @@ class RecommenderBScUrban:
                 end_idx = edges.size(1)
             # get prediction
             prediction = self.model.fit_predict(
-                self.train_data.original_data.x,
-                edges[:, start_idx:end_idx],
-                self.train_data.original_data.train_pos_edge_index
+                self.train_data.original_data.x.to(self.device),
+                edges[:, start_idx:end_idx].to(self.device),
+                self.train_data.original_data.train_pos_edge_index.to(self.device)
             ).sigmoid().detach().cpu().numpy()
             # append prediction to collector
             prediction_collector.append(prediction)
