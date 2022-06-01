@@ -1,39 +1,44 @@
 # SS22-Bachelorarbeit-Recommender
+## Data
+The data folder contains the csv files for the chemical descriptors which would take 1h50min to compute. Instead they
+are pre-saved to enhance computation time. If this file (or one of these files to be precise because faster loading
+methods were implemented) is missing it will be created instead.
+
+Latest version file: `descriptors_transformed_compressed.pkl` which is also memory efficient.
 ## Models
 The models are placed and defined in `model_workspace` and configured in Experiment models in the file `model_config.py` 
-in the folder `utils` from which the test models and respective data and batchers will be loaded from.
+in the parent folder from which the test models and respective data and batchers will be loaded from.
 
 The execution of the test models and data collecting for the experimental/analytical part of the bachelor thesis is
-situated in the file `run_models.py` and the methods for GNN models is situated in `run_tools.py`.
+situated in the file `run_control.py` and the methods for GNN models is situated in `run_tools.py`.
 ## Utils
-There are several util python files which are used for defining, executing and testing the models. It splits in 3 parts:
-### `model_config.py`
-Contains as already explained the configuration of the test models and the settings and also the methods for loading
-the data.
+There are several util python files which are used for defining, executing and testing the models. It splits in 2 parts:
 ### `accuracy`
 Contains different types of python files for different aspects of accuracy:
 - `accuracy_bpr.py` contains an alternative loss which is said to be optimized for training precision and recall scores
 - `accuracy_oversmoothing.py` contains a method for computing the MAD score which is representative for the 
-oversmoothing of the model
+oversmoothing of the model - not used but implemented.
 - `accuracy_recommender.py` contains the accuracy functions for GNN model from the pytorch library. Contained accuracy
 functions calculate the ROC curve and the precision and recall accuracy scores
 - `accuracy_surpriselib.py` contains the accuracy functions for baseline recommender from surpriselib. Contained 
 accuracy functions calculate the ROC curve and the precision and recall accuracy scores.
 - `stopping_control.py` contains a class with logic that stores roc auc values of validation data and determines if the
-training process should be stopped or not.
+training process should be stopped or not. - not required anymore
 ### `data_related`
 Contains helper libraries working or generating data.
 - `data_gen.py` contains function that load the data loading or creating functions. If the pre-generated x files already
 exist then they will be loaded, instead of loading the smiles data from the dataset and generating the x data with it.
 Not recommended as it takes up to 1h52m to finish.
+- `data_info.py` contains class for storing data properties, mainly the mapping dictionaries for the molecule and
+experiment ids
 - `data_protocoller.py` contains a class that will be given all trackworthy data while running the test model training
 and testing and then saving and/or printing it to console
-- `edge_batch.py` contains the Batcher class which splits the edges in subsets and executes neighbor samples for the
-subset of edges to make convolution layer possible
-- `x_data_transform.py` contains a function that takes the raw chemical descriptor values as input and remove empty
-features, shift features containing negative features to positive features, scale values to an interval 0 to 1 and
-handle very large entries (>10^10) by either removing them if there are too few or scale them with logarithm before
-scaling it to 0 to 1.
+- `edge_batch.py` contains the Batcher class which splits the edges in subsets for the minibatch execution of the models
+in order to make it possible to run them on the GPU
+- `protocol_data_interpreting.py` class for loading the protocolled and stored data from the json file and use it to
+create diagrams of the loss, roc and accuracy.
+- `x_data_transform.py` contains a function that takes the raw chemical descriptor values as input and transform them.
+Read more about how to transform them in the bachelor thesis or in the corresponding source code.
 ## Data placement
 As the data necessary is too large for GitHub please use following guidelines to position the csv data files in the file
 structure of the repo when cloned:
@@ -47,3 +52,49 @@ https://ucloud.univie.ac.at/index.php/s/BoaDYO7CxkTx5GI. Please unpack this data
 - descriptors_x.csv containing the unmodified chemical Descriptors
 - descriptors_x_transformed2.csv containing the new transformed x data which will be used as node features if chemical
 Data is loaded.
+## Notebooks
+- `Analysis_GNN_x.ipynb` Notebook used for developing data transformation that is created now automatically in 
+`utils/data_related/data_gen.py`
+- `Baseline-and_accuracy.ipynb` used for executing the baseline algorithm using surpriselib. Baseline algorithm is not
+included in the execution framework.
+- `GNN_homogen_first_model_and_testing.ipynb` used for development of the GNN recommender model and first tests.
+## Gitignore
+Used to prevent data files from being pushed to GitHub as they are bound to fail anyway because of size restrictions.
+Also prevents from pushing IDE specific data from PyCharm to GitHub.
+## Python helper files
+- `cuda_batching_analyze_utils.py` used for determining/approximating the maximal possible batchsize when attempting to
+run the data experiments on GPU via CUDA framework.
+- `model_config.py` contains routines to load predefined models and their data. Also includes logic and information on
+how to establish certain models.
+- `run_tools.py` methods for executing/training/testing the models for minibatch models (mainly)
+## Python execution files
+- `run_control.py` contains class that works as an execution framework of the experiments conducted in the bachelor
+thesis. Also responsible for protocolling loss, roc, roc_auc and accuracy scores precision and recall.
+- `run_models.py` old and deprecated execution framework for models. Reworked and re-implemented as `run_control.py`
+# Installation explanation
+Usage of conda is recommended. My personal recommendation would be to use Anaconda instead of miniconda as the
+functionality of miniconda is available in Anaconda too, but it also has a graphical user iterface.
+
+Creating a conda environment is possible via the following command:
+```commandline
+conda create -n bsc_urban python=3.8.12
+```
+Select newly created environment:
+```commandline
+conda activate bsc_urban
+```
+Use the following commands to install all required libraries:
+(This is done this way as problems with SSL seem to arise when trying to create an environment from a yaml file but
+failed partways on device. Another reason is that pytorch requires a more sophisticated install command to work.)
+```commandline
+conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
+conda install pyg -c pyg
+conda install -c rdkit rdkit
+conda install -c conda-forge scikit-surprise
+conda install -c anaconda pandas
+conda install -c conda-forge tqdm
+conda install -c anaconda numpy
+conda install -c conda-forge jupyterlab
+conda install -c conda-forge nb_conda
+conda install -c conda-forge matplotlib
+```
