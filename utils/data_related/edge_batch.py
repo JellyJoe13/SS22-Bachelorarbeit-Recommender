@@ -373,7 +373,7 @@ class EdgeBatcher:
         np.random.shuffle(index)
         # randomize edges with index
         self.edges = self.edges[:, index]
-        print(self.target)
+        # print(self.target)
         self.target = self.target[index]
         # calculate number of subsets
         self.len = math.ceil((pos_count + neg_count) / num_selection_edges)
