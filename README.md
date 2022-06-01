@@ -98,3 +98,29 @@ conda install -c conda-forge jupyterlab
 conda install -c conda-forge nb_conda
 conda install -c conda-forge matplotlib
 ```
+# Running an experiment
+To run an experiment beside surpriselib (which would require opening the notebook and executing the code there) it is
+recommended to use the routines found in `run_control.py`. The class `RunControl` there automatically loads a model and
+its setting using the configuration in `model_config.py`. Therefore to run an experiment with a model it is required
+to know the id of the model or alter the model definition there in order to utilize the test framework to its full
+capacity. It is theoretically possible to swap components of the class later on as they are not private, however this
+contradicts the use of this framework. To load the experiment setting simply using the following lines of code is 
+required:
+```python
+from run_control import RunControl
+testing_framework = RunControl(model_id, split_mode, batch_size)
+```
+There are two further parameters specifying whether the data has already been loaded and does not need to be loaded
+again and whether to only use a part of the dataset. Technically the framework offers many methods to easily run
+train steps, testin and evaluation but also execution bundles like `run_epoch(...)` in which one whole train-test-validate
+cycle is carried out. Another useful method is `run_experiment` which can be used to execute a whole experiment at once.
+```python
+testing_framework.run_experiment(val_test_frequency, max_epochs)
+```
+This automatically executes up to max_epochs epochs with a test run each val_test_frequency training steps.
+# Recommender
+The best model found in the thesis is GCN - 1 layer - bpr loss - chemical data which is used in the final recommender.
+This recommender can be found in `final_predicter.py` via the class `RecommenderBScUrban`. There the only difference to
+the testing framework is that it will not perform tests as the data will be loaded as training data as whole and not
+split in test- and validation-set. After running a specified amount of epochs the pediction method may be called to
+predict the probability of the molecule-experiment pair to be active.
