@@ -22,6 +22,7 @@ class RunControl:
     working to a too high memory allocation requirement in contrast to the execution of the fullbatch model in the
     jupyter notebook.
     """
+
     def __init__(
             self,
             model_id: int,
@@ -329,13 +330,17 @@ class RunControl:
 
     def run_epoch(
             self,
-            val_test_frequency: int
+            val_test_frequency: int,
+            fluctuation_control_mode: int = 0
     ):
         """
         Function used to execute all the necessary operations for a whole epoch.
 
         Parameters
         ----------
+        fluctuation_control_mode : int
+            defines if a measure should be taken to prevent loss fluctuation. 0 for no fluctuation control, 1 for
+            randomizing between epochs and 2 for leaving last batch (which is potentially smaller) out.
         val_test_frequency : int
             determines after how many train iterations a test on the validation and test set will be carried out.
 
@@ -343,10 +348,19 @@ class RunControl:
         -------
         None
         """
+        # checks if mode in range
+        assert 0 <= fluctuation_control_mode <= 2
+        # mode where the training set is randomized between epochs
+        if fluctuation_control_mode == 1:
+            self.data_object['train'].randomize()
         if self.model_loader.is_batched(self.model_id):
             assert val_test_frequency > 0
             # for loop over train batcher
             for iteration in tqdm(range(0, len(self.data_object["train"]), val_test_frequency)):
+                # detect end of for loop and not execute last train batch
+                if fluctuation_control_mode == 2 \
+                        and iteration == ((len(self.data_object['train']) - 1) % val_test_frequency):
+                    continue
                 self.do_train_step(val_test_frequency)
                 self.do_val_test()
                 self.do_test_test()
@@ -361,7 +375,8 @@ class RunControl:
     def run_experiment(
             self,
             val_test_frequency: int,
-            max_epochs: int
+            max_epochs: int,
+            fluctuation_control_mode: int = 0
     ):
         """
         Function used to execute a whole experiment for the loaded model, data and settings in general. Also saves the
@@ -369,6 +384,9 @@ class RunControl:
 
         Parameters
         ----------
+        fluctuation_control_mode : int
+            defines if a measure should be taken to prevent loss fluctuation. 0 for no fluctuation control, 1 for
+            randomizing between epochs and 2 for leaving last batch (which is potentially smaller) out.
         val_test_frequency : int
             determines after how many train iterations a test on the validation and test set will be carried out.
         max_epochs : int
@@ -382,7 +400,7 @@ class RunControl:
         self.do_val_test()
         self.do_test_test()
         for epoch in tqdm(range(max_epochs)):
-            self.run_epoch(val_test_frequency)
+            self.run_epoch(val_test_frequency, fluctuation_control_mode=fluctuation_control_mode)
             self.save_protocoll()
         return
 
