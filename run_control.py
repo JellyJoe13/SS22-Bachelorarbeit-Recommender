@@ -158,7 +158,8 @@ class RunControl:
 
     def do_train_step(
             self,
-            num_step: int
+            num_step: int,
+            fluctuation_control_mode: int = 0
     ):
         """
         Function used for execute a training step which includes the partial execution of training iterations for an
@@ -166,6 +167,9 @@ class RunControl:
 
         Parameters
         ----------
+        fluctuation_control_mode : int
+            defines if a measure should be taken to prevent loss fluctuation. 0 for no fluctuation control, 1 for
+            randomizing between epochs and 2 for leaving last batch (which is potentially smaller) out.
         num_step : int
             number of training iterations being carried out
 
@@ -180,6 +184,9 @@ class RunControl:
                 end_iteration = len(self.data_object["train"])
             # batched model
             for index in tqdm(range(self.next_train_iteration, end_iteration)):
+                # detects if this is the last batch and if it is and mode 2 is activated this batch is skipped
+                if (fluctuation_control_mode == 2) and (index == (end_iteration-1)):
+                    continue
                 batch = self.data_object["train"](index).to(self.device)
                 loss, roc_auc = run_tools.train_model_batch(
                     model=self.model,
@@ -357,11 +364,7 @@ class RunControl:
             assert val_test_frequency > 0
             # for loop over train batcher
             for iteration in tqdm(range(0, len(self.data_object["train"]), val_test_frequency)):
-                # detect end of for loop and not execute last train batch
-                if fluctuation_control_mode == 2 \
-                        and iteration == ((len(self.data_object['train']) - 1) % val_test_frequency):
-                    continue
-                self.do_train_step(val_test_frequency)
+                self.do_train_step(val_test_frequency, fluctuation_control_mode=fluctuation_control_mode)
                 self.do_val_test()
                 self.do_test_test()
         else:
