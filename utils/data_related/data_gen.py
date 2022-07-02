@@ -17,7 +17,15 @@ from .x_data_transform import transform_and_scale_x_data
 from .data_info import DataInfoHandler
 
 
-def pandas_to_GNN_pyg_edges(df, cid_translation_dictionary: dict, aid_translation_dictionary: dict):
+def pandas_to_GNN_pyg_edges(
+        df,
+        cid_translation_dictionary: dict,
+        aid_translation_dictionary: dict
+):
+    """
+    Function interface/parameters identical to function pandas_to_GNN_py_edges_v2. Function unused as other function
+    is significantly faster due to optimizations using for example pandas.
+    """
     # definition of function used for creating the edge-set for test/train & active/inactive
     def sub_conv(activity_string: str, df_subset):
         # temp save selection set
@@ -97,6 +105,24 @@ def subset_x_handler(
         cid_dict: dict,
         aid_count: int
 ) -> np.ndarray:
+    """
+    Function used in the case the test dataset should be loaded. Returns the subset of node feature matrix that is used
+    in the test data set.
+
+    Parameters
+    ----------
+    chem_desc : np.ndarray
+        chemical descriptors of whole dataset
+    cid_dict : dict
+        compound ids of partial set to compound ids of original dataset mapping
+    aid_count : int
+        count of assays in partial data set
+
+    Returns
+    -------
+    np.ndarray
+        node feature matrix of test data set
+    """
     # WARNING - STATIC PARAMETER FOR SPECIFIC DATASET
     whole_dataset_aid_count = 2481
     # acquire molecule count
@@ -104,7 +130,6 @@ def subset_x_handler(
     # initialize array
     data = np.zeros(x=np.zeros(shape=((aid_count + cid_count), chem_desc.shape[1])))
     # get which cid's to put in data
-    cid_keys = list(set(cid_dict.keys()))
     for key, value in cid_dict.items():
         data[aid_count + value, :] = chem_desc[whole_dataset_aid_count + key, :]
     return data
@@ -302,7 +327,8 @@ def data_transform_split(
     for i, j in split:
         train_ind = i
         test_ind = j
-    # now we have the indexes of the split data_related. Left to do is use this and create the data_related package of choice
+    # now we have the indexes of the split data_related. Left to do is use this and create the data_related package of
+    # choice
     if data_mode == 0:
         # data_related mode of surprise package
         # here we need to remodel the column activity to 0 and 1 boolean entries

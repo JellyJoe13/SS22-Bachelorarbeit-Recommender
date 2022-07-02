@@ -53,7 +53,7 @@ class DataInfoHandler:
         })
         df["aid"] = df["aid"].map(lambda x: self.experiment_dict[x])
         df["cid"] = df["cid"].map(lambda x: self.molecule_dict[x])
-        # create fuzed numpy array
+        # create fused numpy array
         edges = df[["aid", "cid"]].to_numpy().T
         # to torch tensor
         edges = torch.tensor(edges, dtype=torch.long)
