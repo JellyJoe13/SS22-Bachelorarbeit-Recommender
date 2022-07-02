@@ -27,7 +27,6 @@ class GNN_GCNConv_homogen(torch.nn.Module):
             self.bilinear = Bilinear(num_features_out, num_features_out, 1)
             self.endflatten = Flatten(0, -1)
 
-    # todo: maybe use Linear layer to rate embedding columns
     def fit_predict(
             self,
             x_input: torch.Tensor,

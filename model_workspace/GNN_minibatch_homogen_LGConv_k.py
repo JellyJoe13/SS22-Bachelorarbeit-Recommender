@@ -19,7 +19,7 @@ class GNN_LGConv_homogen_variable(torch.nn.Module):
         input_x_features : int
             number of features for each node input
         number_convolutions : int
-            number of Light Graph Convolution Layers to use. Currently possible configurations: 1, 2
+            number of Light Graph Convolution Layers to use. Current possible configurations: 1, 2
         """
         super(GNN_LGConv_homogen_variable, self).__init__()
         assert number_convolutions == 1 or number_convolutions == 2

@@ -374,7 +374,6 @@ class RunControl:
         self.do_full_test()
         return
 
-    # todo: use early stopping or maybe just for final predicting program
     def run_experiment(
             self,
             val_test_frequency: int,
@@ -424,6 +423,24 @@ class RunControl:
             molecule_ids: np.ndarray,
             experiment_ids: np.ndarray
     ) -> np.ndarray:
+        """
+        Function technically able to handle predictions of molecule-experiment pairs, however not useful as this class
+        is the execution framework for the testing and not the final predicter. Use the final recommender in file
+        ''final_predicter.py'' in class ''RecommenderBScUrban'' instead.
+
+        Parameters
+        ----------
+        molecule_ids : np.ndarray
+            numpy array containing the molecule id part of the molecule-experiment pairs to predict
+        experiment_ids : np.ndarray
+            numpy array containing the experiment id part of the molecule-experiment pairs to predict
+
+        Returns
+        -------
+        np.ndarray
+            array containing the prediction scores for the input molecule-experiment pairs denoting the probability of
+            this pair to be active.
+        """
         # transform numpy input information on which molecule-experiment pair to predict to torch tensor
         transformed_edges = self.data_info.create_mapped_edges(
             cid=molecule_ids,
@@ -433,7 +450,6 @@ class RunControl:
         if self.model_loader.is_batched(self.model_id):
             # shortcut for original data link
             original_data = self.data_object["train"].original_data
-            # todo: check for correctness
             # initialize logits
             logits = []
             # iterate over subsets of edges to predict

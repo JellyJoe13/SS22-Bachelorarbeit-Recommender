@@ -115,7 +115,7 @@ class DataProtocoller:
 
         Returns
         -------
-
+        Nothing
         """
         if epoch not in self.__epoch_dict["validating"]:
             self.__epoch_dict["validating"][epoch] = {}
