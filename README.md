@@ -97,6 +97,7 @@ conda install -c anaconda numpy
 conda install -c conda-forge jupyterlab
 conda install -c conda-forge nb_conda
 conda install -c conda-forge matplotlib
+conda install -c conda-forge scikit-learn
 ```
 # Running an experiment
 To run an experiment beside surpriselib (which would require opening the notebook and executing the code there) it is
