@@ -1,7 +1,10 @@
+"""
+Originally planned was a GIN convolution layer, however the convolution requires a torch.nn.Module parameter which
+requires another initialization and configuration. SAGE is used as a replacement. Usage of GIN in further work.
+"""
 import torch.nn
 
 
-# todo: ... basically understand what it does and why it wants a torch.nn.Module parameter?... or just let it be
 class GNN_GINConv(torch.nn.Module):
     def __init__(
             self

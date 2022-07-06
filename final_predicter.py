@@ -11,7 +11,6 @@ from tqdm.auto import tqdm
 import numpy as np
 
 
-# todo: test run on GPU system
 class RecommenderBScUrban:
     """
     Recommender that contains the best model determined in the bachelor thesis.

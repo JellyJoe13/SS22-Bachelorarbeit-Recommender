@@ -66,7 +66,8 @@ def calc_ROC_curve(
     roc_auc = metrics.auc(fpr, tpr)
     # PLOT THE ROC CURVE
     '''
-    Following code inspired/partly copied from https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#sphx-glr-auto-examples-model-selection-plot-roc-py
+    Following code inspired/partly copied from 
+    https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#sphx-glr-auto-examples-model-selection-plot-roc-py
     '''
     fig = plt.figure()
     plt.plot(fpr, tpr, color="darkorange", label="ROC curve (ROC AUC=%0.2f)" % roc_auc)
@@ -95,8 +96,8 @@ def accuracy_precision_recall(
     Parameters
     ----------
     predictions : list(surprise.prediction_algorithms.predictions.Prediction),
-        contains the predictions of surpriselib acquired with the .test() method. Contains the data_related with which the
-        scores are to be generated.
+        contains the predictions of surpriselib acquired with the .test() method. Contains the data_related with which
+        the scores are to be generated.
     mode : str
         either "constant" or "relative". Controls if the k for the top k accuracy scores should be constantly set to 100
         or if 1% of the input data_related should be used.

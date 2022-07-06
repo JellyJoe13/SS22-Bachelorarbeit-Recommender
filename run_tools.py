@@ -1,19 +1,19 @@
 import typing
+from datetime import datetime
+
+import torch
+import torch_geometric.data
+from sklearn.metrics import roc_auc_score
 from tqdm.auto import tqdm
 
 import utils.accuracy.accuarcy_bpr
 from model_workspace.GNN_minibatch_homogen_GATConv import GNN_GATConv_homogen
 from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homogen_basic
+from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
 from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_variable
 from model_workspace.GNN_minibatch_homogen_SAGEConv import GNN_SAGEConv_homogen
 from utils.accuracy import accuracy_recommender
 from utils.data_related import edge_batch
-from sklearn.metrics import roc_auc_score
-import torch
-import torch_geometric.data
-import torch.nn.functional as F
-from datetime import datetime
-from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
 
 
 def train_model_batch(

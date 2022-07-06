@@ -1,7 +1,14 @@
+"""
+Unused. Previously planned because of fluctuating accuracy scores in some models, but resolved due to different model
+choice and setting bug fix removing the main cause of the problem.
+"""
+
+
 class EarlyStoppingControl:
     """
     Class used for controlling if the training process should stop before the max iteration count is reached.
     """
+
     def __init__(self):
         self.roc_tracker = []
 

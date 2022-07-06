@@ -1,27 +1,22 @@
-import surprise
-import torch
-import numpy as np
-import sys
-import os
 import typing
 
+import numpy as np
+import surprise
+import torch
 import torch_geometric.data
-
-import utils.accuracy.accuarcy_bpr
-from utils.data_related.edge_batch import EdgeConvolutionBatcher, EdgeBatcher
-from utils.data_related.data_gen import data_transform_split
 from surprise import SVD
-from torch.nn import functional as F
+
 from model_workspace.GNN_fullbatch_homogen_GCNConv import GNN_homogen_chemData_GCN
-from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
-from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homogen_basic
-from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_variable
 from model_workspace.GNN_minibatch_homogen_GATConv import GNN_GATConv_homogen
+from model_workspace.GNN_minibatch_homogen_GCNConv_one import GNN_GCNConv_homogen_basic
+from model_workspace.GNN_minibatch_homogen_GCNConv_two import GNN_GCNConv_homogen
+from model_workspace.GNN_minibatch_homogen_LGConv_k import GNN_LGConv_homogen_variable
 from model_workspace.GNN_minibatch_homogen_SAGEConv import GNN_SAGEConv_homogen
 from utils.accuracy.accuarcy_bpr import binary_loss_adapter, bpr_loss_revised
+from utils.data_related.data_gen import data_transform_split
+from utils.data_related.edge_batch import EdgeConvolutionBatcher, EdgeBatcher
 
 
-# todo: change is_batching to only convolution info with neg values?
 class ModelLoader:
     def __init__(
             self
@@ -191,7 +186,7 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "bpr"
             },
-            # new models
+            # GAT convolution section
             # - pytorch homogen minibatch GATConv-1 binaryloss
             20: {
                 "model": 4,
@@ -399,7 +394,7 @@ class ModelLoader:
                 "loss": "binary"
             },
             # 200 SECTION - NODATA BPR LOSS
-            # - pytorch homogen minibatch GCNConv-2 binaryloss
+            # - pytorch homogen minibatch GCNConv-2 bprloss
             200: {
                 "model": 1,
                 "num_features_input": 205,
@@ -412,7 +407,7 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "bpr"
             },
-            # - pytorch homogen minibatch LGConv-1 binaryloss
+            # - pytorch homogen minibatch LGConv-1 bprloss
             201: {
                 "model": 3,
                 "num_features_input": 205,
@@ -424,7 +419,7 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "bpr"
             },
-            # - pytorch homogen minibatch GATConv-0 binaryloss
+            # - pytorch homogen minibatch GATConv-0 bprloss
             202: {
                 "model": 4,
                 "num_features_input": 205,
@@ -437,7 +432,7 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "bpr"
             },
-            # - pytorch homogen minibatch SAGEConv-0 binaryloss
+            # - pytorch homogen minibatch SAGEConv-0 bprloss
             203: {
                 "model": 5,
                 "num_features_input": 205,
@@ -450,7 +445,7 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "bpr"
             },
-            # GCN 1 homogen minibatch binary
+            # GCN 1 homogen minibatch bprloss
             204: {
                 "model": 2,
                 "num_features_input": 205,
@@ -462,7 +457,7 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "bpr"
             },
-            # - pytorch homogen minibatch LGConv-2 binaryloss
+            # - pytorch homogen minibatch LGConv-2 bprloss
             205: {
                 "model": 3,
                 "num_features_input": 205,
@@ -474,7 +469,7 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "bpr"
             },
-            # - pytorch homogen minibatch GATConv-1 binaryloss
+            # - pytorch homogen minibatch GATConv-1 bprloss
             206: {
                 "model": 4,
                 "num_features_input": 205,
@@ -487,7 +482,7 @@ class ModelLoader:
                 "is_batched": True,
                 "loss": "bpr"
             },
-            # - pytorch homogen minibatch SAGEConv-1 binaryloss
+            # - pytorch homogen minibatch SAGEConv-1 bprloss
             207: {
                 "model": 5,
                 "num_features_input": 205,
@@ -753,7 +748,6 @@ class ModelLoader:
         tuple(surprise.trainset.Trainset, list)
             Tuple containing the trainset and testset which is needed for surpriselib
         """
-        # todo: double usage of type parameters is_pytorch and data_related mode
         # differ if model to load is pytorch or not
         if self.is_pytorch(model_id):
             # load the data_related from storage and with datamode and splitmode

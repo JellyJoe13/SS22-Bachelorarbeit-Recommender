@@ -22,6 +22,7 @@ class RunControl:
     working to a too high memory allocation requirement in contrast to the execution of the fullbatch model in the
     jupyter notebook.
     """
+
     def __init__(
             self,
             model_id: int,
@@ -157,7 +158,8 @@ class RunControl:
 
     def do_train_step(
             self,
-            num_step: int
+            num_step: int,
+            fluctuation_control_mode: int = 0
     ):
         """
         Function used for execute a training step which includes the partial execution of training iterations for an
@@ -165,6 +167,9 @@ class RunControl:
 
         Parameters
         ----------
+        fluctuation_control_mode : int
+            defines if a measure should be taken to prevent loss fluctuation. 0 for no fluctuation control, 1 for
+            randomizing between epochs and 2 for leaving last batch (which is potentially smaller) out.
         num_step : int
             number of training iterations being carried out
 
@@ -179,6 +184,9 @@ class RunControl:
                 end_iteration = len(self.data_object["train"])
             # batched model
             for index in tqdm(range(self.next_train_iteration, end_iteration)):
+                # detects if this is the last batch and if it is and mode 2 is activated this batch is skipped
+                if (fluctuation_control_mode == 2) and (index == (end_iteration-1)):
+                    continue
                 batch = self.data_object["train"](index).to(self.device)
                 loss, roc_auc = run_tools.train_model_batch(
                     model=self.model,
@@ -329,13 +337,17 @@ class RunControl:
 
     def run_epoch(
             self,
-            val_test_frequency: int
+            val_test_frequency: int,
+            fluctuation_control_mode: int = 0
     ):
         """
         Function used to execute all the necessary operations for a whole epoch.
 
         Parameters
         ----------
+        fluctuation_control_mode : int
+            defines if a measure should be taken to prevent loss fluctuation. 0 for no fluctuation control, 1 for
+            randomizing between epochs and 2 for leaving last batch (which is potentially smaller) out.
         val_test_frequency : int
             determines after how many train iterations a test on the validation and test set will be carried out.
 
@@ -343,11 +355,16 @@ class RunControl:
         -------
         None
         """
+        # checks if mode in range
+        assert 0 <= fluctuation_control_mode <= 2
+        # mode where the training set is randomized between epochs
+        if fluctuation_control_mode == 1:
+            self.data_object['train'].randomize()
         if self.model_loader.is_batched(self.model_id):
             assert val_test_frequency > 0
             # for loop over train batcher
             for iteration in tqdm(range(0, len(self.data_object["train"]), val_test_frequency)):
-                self.do_train_step(val_test_frequency)
+                self.do_train_step(val_test_frequency, fluctuation_control_mode=fluctuation_control_mode)
                 self.do_val_test()
                 self.do_test_test()
         else:
@@ -357,11 +374,11 @@ class RunControl:
         self.do_full_test()
         return
 
-    # todo: use early stopping or maybe just for final predicting program
     def run_experiment(
             self,
             val_test_frequency: int,
-            max_epochs: int
+            max_epochs: int,
+            fluctuation_control_mode: int = 0
     ):
         """
         Function used to execute a whole experiment for the loaded model, data and settings in general. Also saves the
@@ -369,6 +386,9 @@ class RunControl:
 
         Parameters
         ----------
+        fluctuation_control_mode : int
+            defines if a measure should be taken to prevent loss fluctuation. 0 for no fluctuation control, 1 for
+            randomizing between epochs and 2 for leaving last batch (which is potentially smaller) out.
         val_test_frequency : int
             determines after how many train iterations a test on the validation and test set will be carried out.
         max_epochs : int
@@ -382,7 +402,7 @@ class RunControl:
         self.do_val_test()
         self.do_test_test()
         for epoch in tqdm(range(max_epochs)):
-            self.run_epoch(val_test_frequency)
+            self.run_epoch(val_test_frequency, fluctuation_control_mode=fluctuation_control_mode)
             self.save_protocoll()
         return
 
@@ -403,6 +423,24 @@ class RunControl:
             molecule_ids: np.ndarray,
             experiment_ids: np.ndarray
     ) -> np.ndarray:
+        """
+        Function technically able to handle predictions of molecule-experiment pairs, however not useful as this class
+        is the execution framework for the testing and not the final predicter. Use the final recommender in file
+        ''final_predicter.py'' in class ''RecommenderBScUrban'' instead.
+
+        Parameters
+        ----------
+        molecule_ids : np.ndarray
+            numpy array containing the molecule id part of the molecule-experiment pairs to predict
+        experiment_ids : np.ndarray
+            numpy array containing the experiment id part of the molecule-experiment pairs to predict
+
+        Returns
+        -------
+        np.ndarray
+            array containing the prediction scores for the input molecule-experiment pairs denoting the probability of
+            this pair to be active.
+        """
         # transform numpy input information on which molecule-experiment pair to predict to torch tensor
         transformed_edges = self.data_info.create_mapped_edges(
             cid=molecule_ids,
@@ -412,7 +450,6 @@ class RunControl:
         if self.model_loader.is_batched(self.model_id):
             # shortcut for original data link
             original_data = self.data_object["train"].original_data
-            # todo: check for correctness
             # initialize logits
             logits = []
             # iterate over subsets of edges to predict

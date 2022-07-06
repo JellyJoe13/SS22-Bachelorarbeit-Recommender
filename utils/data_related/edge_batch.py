@@ -11,8 +11,11 @@ class EdgeConvolutionBatcher:
     """
     Class for batching based on edges and Convolution Layer.
 
-    All edges will be exactly once be present in one batch data_related object, nodes may appear multiple times. Used for edge
-    prediction or learning that uses Convolution layer.
+    All edges will be exactly once be present in one batch data_related object, nodes may appear multiple times. Used
+    for edge prediction or learning that uses Convolution layer.
+
+    Efficiency-Deprecation Warning: Due to excessive time cost for mapping of ids the usage of this batcher is not
+    advised.
     """
 
     def __init__(
@@ -210,6 +213,17 @@ class EdgeConvolutionBatcher:
         return edge_sample, new_node_list
 
     def next_element(self):
+        """
+        Function used for iterating through the split dataset. Computes random neighbor sampling while loading batch
+        data_related object.
+
+        Returns
+        -------
+        data : torch_geometric.data.Data
+            Data object containing the batched fragment of the original data
+        reverse_dict : dict
+            dictionary containing the mapping of ids to their original ids in the data
+        """
         # get start and end position and check logic to stop
         idx_start = self.edge_sample_count * self.batch_index
         idx_end = self.edge_sample_count * (self.batch_index + 1)
@@ -264,6 +278,8 @@ class EdgeConvolutionBatcher:
         -------
         data_related : torch_geometric.data.Data
             Data object containing the batched fragment of the original input data_related
+        reverse_dict : dict
+            dictionary containing the mapping of ids to their original ids in the data
         """
         # if the batch split has not been yet calulated, calculate it
         if not self.batch_list:

@@ -1,3 +1,7 @@
+"""
+Information: Content planned for measuring oversmoothing, however problem was solved due to a configuration bug fix and
+therefore not needed anymore, therefore remaining unused.
+"""
 import torch
 import numpy as np
 
